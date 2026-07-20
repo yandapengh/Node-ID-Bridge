@@ -4,6 +4,25 @@ Node ID Bridge is a focused Figma Design plugin that bridges canvas selections a
 
 The plugin runs locally, has no allowed network domains, and does not send design data anywhere.
 
+## Features
+
+- Read the current Figma selection and preview each node's name, ID, and type.
+- Copy selection data as Compact text or compact JSON, with optional node names.
+- Extract ordinary node IDs, URL-style IDs, and instance-context IDs from arbitrary text.
+- Resolve all IDs before changing the selection, preventing partial selection on errors or across pages.
+
+Supported input examples:
+
+```text
+5309:30855
+5309-30855
+I6003:47907;6003:40969 | Toast
+I6057:28440;6003:47907;6003:40969
+https://www.figma.com/design/example/file?node-id=5309-30855
+```
+
+Instance-context IDs beginning with `I` are preserved as one complete node address, including nested `;` path segments.
+
 ## Development
 
 ```bash

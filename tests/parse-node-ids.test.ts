@@ -52,6 +52,39 @@ describe("parseNodeIds", () => {
     assert.deepEqual(parseNodeIds(input), ["5309:30855"]);
   });
 
+  it("preserves a composite instance-context ID as one ID", () => {
+    assert.deepEqual(
+      parseNodeIds("I6003:47907;6003:40969 | Toast"),
+      ["I6003:47907;6003:40969"]
+    );
+  });
+
+  it("normalizes every segment of a hyphenated instance-context ID", () => {
+    assert.deepEqual(
+      parseNodeIds("node-id=I6003-47907;6003-40969"),
+      ["I6003:47907;6003:40969"]
+    );
+  });
+
+  it("preserves deeper instance-context paths", () => {
+    assert.deepEqual(
+      parseNodeIds("I6057:28440;6003:47907;6003:40969 | Toast"),
+      ["I6057:28440;6003:47907;6003:40969"]
+    );
+  });
+
+  it("parses composite and ordinary IDs without extracting composite fragments", () => {
+    const input = [
+      "I6501:145066;6501:145295 | Toast",
+      "5309:30855 | Profile Details"
+    ].join("\n");
+
+    assert.deepEqual(parseNodeIds(input), [
+      "I6501:145066;6501:145295",
+      "5309:30855"
+    ]);
+  });
+
   it("parses mixed text and preserves first-seen order", () => {
     const input =
       "First 10-20, then id=30:40, URL node-id=50-60, finally 10:20.";
