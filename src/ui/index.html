@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Node ID Bridge</title>
+    <style>
+      /*__STYLES__*/
+    </style>
+  </head>
+  <body>
+    <main class="plugin-shell">
+      <header class="plugin-header">
+        <h1>Node ID Bridge</h1>
+        <p>Copy selected node addresses or select nodes from pasted IDs.</p>
+      </header>
+
+      <section class="section" aria-labelledby="selection-heading">
+        <div class="section-heading">
+          <h2 id="selection-heading">Selection <span aria-hidden="true">→</span> IDs</h2>
+          <button id="read-selection" class="button button-secondary" type="button">
+            Read current selection
+          </button>
+        </div>
+
+        <div id="selection-preview" class="preview" aria-live="polite">
+          <div class="empty-state">
+            Read the current Figma selection to preview node IDs.
+          </div>
+        </div>
+
+        <div class="copy-controls">
+          <label class="checkbox-row">
+            <input id="include-names" type="checkbox" checked />
+            <span>Include node names</span>
+          </label>
+
+          <fieldset class="format-fieldset">
+            <legend>Copy format</legend>
+            <div class="segmented-control">
+              <label>
+                <input type="radio" name="copy-format" value="compact" checked />
+                <span>Compact</span>
+              </label>
+              <label>
+                <input type="radio" name="copy-format" value="json" />
+                <span>JSON</span>
+              </label>
+            </div>
+          </fieldset>
+        </div>
+
+        <button id="copy-selection" class="button button-primary full-width" type="button" disabled>
+          Copy
+        </button>
+        <div id="copy-status" class="status" data-tone="neutral" role="status" aria-live="polite">
+          Nothing to copy yet.
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="ids-heading">
+        <div class="section-heading compact-heading">
+          <h2 id="ids-heading">IDs <span aria-hidden="true">→</span> Selection</h2>
+        </div>
+
+        <label class="input-label" for="node-id-input">Paste node IDs or text containing IDs</label>
+        <textarea
+          id="node-id-input"
+          rows="5"
+          spellcheck="false"
+          placeholder="5309:30855 | Profile Details&#10;5309-27495"
+        ></textarea>
+
+        <div id="parse-status" class="status" data-tone="neutral" role="status" aria-live="polite">
+          No node IDs found yet.
+        </div>
+
+        <div class="button-row">
+          <button id="select-nodes" class="button button-primary" type="button" disabled>
+            Select nodes
+          </button>
+          <button id="clear-input" class="button button-secondary" type="button">
+            Clear
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      /*__UI_SCRIPT__*/
+    </script>
+  </body>
+</html>

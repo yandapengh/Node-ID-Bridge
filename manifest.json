@@ -1,0 +1,12 @@
+{
+  "name": "Node ID Bridge",
+  "id": "1549038401770167582",
+  "api": "1.0.0",
+  "main": "dist/main.js",
+  "ui": "dist/ui.html",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
+}
