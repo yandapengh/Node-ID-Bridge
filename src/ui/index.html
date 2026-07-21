@@ -83,6 +83,76 @@
             Clear
           </button>
         </div>
+
+        <div id="parsed-selection-panel" class="parsed-selection-panel" hidden>
+          <div class="parsed-selection-heading">
+            <div>
+              <h3>Resolved nodes</h3>
+              <span id="checked-count" class="checked-count"></span>
+            </div>
+            <div class="navigation-buttons" aria-label="Preview navigation">
+              <button
+                id="previous-node"
+                class="button button-icon button-secondary"
+                type="button"
+                aria-label="Focus previous node"
+                title="Focus previous node"
+                disabled
+              >
+                ↑
+              </button>
+              <button
+                id="next-node"
+                class="button button-icon button-secondary"
+                type="button"
+                aria-label="Focus next node"
+                title="Focus next node"
+                disabled
+              >
+                ↓
+              </button>
+            </div>
+          </div>
+
+          <div class="list-actions">
+            <button id="select-all" class="text-button" type="button">Select all</button>
+            <button id="clear-all" class="text-button" type="button">Clear all</button>
+          </div>
+
+          <div
+            id="parsed-selection-preview"
+            class="parsed-selection-preview"
+            role="list"
+            aria-label="Resolved nodes. Use Up and Down Arrow keys to focus nodes on the canvas."
+            tabindex="0"
+          ></div>
+
+          <div class="parsed-action-row">
+            <button
+              id="copy-parsed-selection"
+              class="button button-secondary"
+              type="button"
+              disabled
+            >
+              Copy to clipboard
+            </button>
+            <button
+              id="apply-selection"
+              class="button button-primary"
+              type="button"
+              disabled
+            >
+              Apply selection
+            </button>
+          </div>
+          <div
+            id="selection-action-status"
+            class="status selection-action-status"
+            data-tone="neutral"
+            role="status"
+            aria-live="polite"
+          ></div>
+        </div>
       </section>
     </main>
 

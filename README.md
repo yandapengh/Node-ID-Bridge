@@ -4,11 +4,15 @@ Node ID Bridge is a focused Figma Design plugin that bridges canvas selections a
 
 The plugin runs locally, has no allowed network domains, and does not send design data anywhere.
 
+Current usability release: **V1.1** (`1.1.0`).
+
 ## Features
 
 - Read the current Figma selection and preview each node's name, ID, and type.
 - Copy selection data as Compact text or compact JSON, with optional node names.
 - Extract ordinary node IDs, URL-style IDs, and instance-context IDs from arbitrary text.
+- Review resolved nodes in input order, keep or clear individual nodes, and copy the checked list as `ID | Name`.
+- Step through resolved nodes with the arrow controls or keyboard, then restore the checked nodes with **Apply selection**.
 - Resolve all IDs before changing the selection, preventing partial selection on errors or across pages.
 
 Supported input examples:
@@ -22,6 +26,16 @@ https://www.figma.com/design/example/file?node-id=5309-30855
 ```
 
 Instance-context IDs beginning with `I` are preserved as one complete node address, including nested `;` path segments.
+
+## V1.1 workflow
+
+1. Paste node IDs or any text containing node IDs, then choose **Select nodes**.
+2. Review the resolved nodes in their original input order. Every node is checked initially.
+3. Use the checkboxes, **Select all**, or **Clear all** to build the final selection.
+4. Click a row or use ↑/↓ to inspect each node on the Figma canvas. Inspection does not change its checkbox.
+5. Choose **Copy to clipboard** to copy checked nodes as `ID | Figma name`, or **Apply selection** to restore the checked nodes as the final canvas selection.
+
+Node validation is atomic: missing, deleted, non-selectable, or cross-page nodes do not produce a partial final selection.
 
 ## Development
 
