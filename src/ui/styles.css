@@ -293,7 +293,8 @@ h2 {
   border-bottom: 0;
 }
 
-.identity-grid.table-row {
+.identity-grid.table-row,
+.export-grid.table-row {
   cursor: pointer;
 }
 

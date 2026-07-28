@@ -175,11 +175,12 @@ Changing or clearing the input invalidates the previous resolved rows. Missing, 
 2. Choose **Component page** or **UX Key page**.
 3. Paste node IDs and choose **Confirm**. IDs may span Pages, and confirmation does not change the canvas.
 4. In the table, check the rows that should be updated and exported.
-5. Edit metadata inline or use **批量写入** to write a field to every checked row.
-6. For Component pages, fill required **Category** and **State** fields.
-7. For UX Key pages, fill required **UX Scenario**; **Category** and **State** are optional.
-8. Optionally click the **Name** header to change display sorting.
-9. Choose **Export PNG 1x + ZIP**.
+5. Click a row outside its checkbox and input fields to select, reveal, and zoom to that node on the Figma canvas. Press Enter while the row itself is focused for the same action.
+6. Use the focused canvas node as visual context while editing metadata inline, or use **批量写入** to write a field to every checked row.
+7. For Component pages, fill required **Category** and **State** fields.
+8. For UX Key pages, fill required **UX Scenario**; **Category** and **State** are optional.
+9. Optionally click the **Name** header to change display sorting.
+10. Choose **Export PNG 1x + ZIP**.
 
 Unchecked rows are not validated, updated, or exported, but their drafts are retained. Display sorting never changes ZIP or manifest order: output always follows the original pasted-ID order.
 
