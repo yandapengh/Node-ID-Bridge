@@ -1,5 +1,7 @@
 import { parseNodeIds } from "./shared/parse-node-ids";
+import { exportImageBatch } from "./shared/export-batch";
 import type {
+  ImageExportRequest,
   NodeReference,
   PageSelectionSummary,
   PluginToUiMessage
@@ -300,6 +302,90 @@ async function applySelection(ids: readonly string[]): Promise<void> {
   }
 }
 
+async function resolveExportNodes(input: string): Promise<void> {
+  const ids = parseNodeIds(input);
+  if (ids.length === 0) {
+    postToUi({
+      type: "resolve-export-nodes-error",
+      message: "No Figma node IDs were found. Nothing changed on the canvas."
+    });
+    return;
+  }
+
+  try {
+    const results = await Promise.all(
+      ids.map(async (id) => ({ id, node: await figma.getNodeByIdAsync(id) }))
+    );
+    const missingIds = results
+      .filter((result) => result.node === null)
+      .map((result) => result.id);
+    if (missingIds.length > 0) {
+      postToUi({
+        type: "resolve-export-nodes-error",
+        message: `Not found or deleted: ${missingIds.join(", ")}. No rows were confirmed.`
+      });
+      return;
+    }
+
+    const nonSceneIds = results
+      .filter((result) => result.node !== null && !isSceneNode(result.node))
+      .map((result) => result.id);
+    if (nonSceneIds.length > 0) {
+      postToUi({
+        type: "resolve-export-nodes-error",
+        message: `Not exportable canvas nodes: ${nonSceneIds.join(", ")}. No rows were confirmed.`
+      });
+      return;
+    }
+
+    const references: NodeReference[] = [];
+    for (const result of results) {
+      const node = result.node as SceneNode;
+      const page = getContainingPage(node);
+      if (page === null) {
+        postToUi({
+          type: "resolve-export-nodes-error",
+          message: `Could not determine the page for node ${node.id}. No rows were confirmed.`
+        });
+        return;
+      }
+      references.push({
+        id: node.id,
+        name: node.name,
+        type: node.type,
+        pageId: page.id,
+        pageName: page.name
+      });
+    }
+
+    postToUi({ type: "resolve-export-nodes-success", nodes: references });
+  } catch (error: unknown) {
+    const detail = error instanceof Error ? ` ${error.message}` : "";
+    postToUi({
+      type: "resolve-export-nodes-error",
+      message: `Figma could not complete the export node lookup.${detail}`
+    });
+  }
+}
+
+async function exportImages(request: ImageExportRequest): Promise<void> {
+  const result = await exportImageBatch(request, {
+    getNodeByIdAsync: async (id) => {
+      const node = await figma.getNodeByIdAsync(id);
+      if (node === null || !isSceneNode(node)) {
+        return null;
+      }
+      return {
+        id: node.id,
+        name: node.name,
+        exportAsync: (settings) => node.exportAsync(settings)
+      };
+    },
+    onItemStatus: postToUi
+  });
+  postToUi(result.message);
+}
+
 figma.ui.onmessage = async (message: unknown): Promise<void> => {
   if (!isUiToPluginMessage(message)) {
     postToUi({
@@ -329,6 +415,16 @@ figma.ui.onmessage = async (message: unknown): Promise<void> => {
 
   if (message.type === "focus-node") {
     await focusNode(message.id);
+    return;
+  }
+
+  if (message.type === "resolve-export-nodes") {
+    await resolveExportNodes(message.input);
+    return;
+  }
+
+  if (message.type === "export-images") {
+    await exportImages(message);
     return;
   }
 

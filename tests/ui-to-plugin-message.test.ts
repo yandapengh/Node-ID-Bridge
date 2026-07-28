@@ -12,6 +12,23 @@ describe("isUiToPluginMessage", () => {
     );
   });
 
+  it("accepts only well-shaped export node resolution requests", () => {
+    assert.equal(
+      isUiToPluginMessage({
+        type: "resolve-export-nodes",
+        input: "1:2\n3:4"
+      }),
+      true
+    );
+    for (const value of [
+      { type: "resolve-export-nodes" },
+      { type: "resolve-export-nodes", input: null },
+      { type: "resolve-export-nodes", input: "1:2", extra: true }
+    ]) {
+      assert.equal(isUiToPluginMessage(value), false);
+    }
+  });
+
   it("accepts a non-empty focus-node ID", () => {
     assert.equal(
       isUiToPluginMessage({ type: "focus-node", id: "10:20" }),

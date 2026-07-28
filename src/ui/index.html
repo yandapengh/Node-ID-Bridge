@@ -11,150 +11,519 @@
   <body>
     <main class="plugin-shell">
       <header class="plugin-header">
-        <h1>Node ID Bridge</h1>
-        <p>Copy selected node addresses or select nodes from pasted IDs.</p>
+        <div>
+          <h1>Node ID Bridge</h1>
+          <p>Bridge selections, node IDs, and annotated PNG batches.</p>
+        </div>
       </header>
 
-      <section class="section" aria-labelledby="selection-heading">
-        <div class="section-heading">
-          <h2 id="selection-heading">Selection <span aria-hidden="true">→</span> IDs</h2>
-          <button id="read-selection" class="button button-secondary" type="button">
-            Read current selection
-          </button>
-        </div>
-
-        <div id="selection-preview" class="preview" aria-live="polite">
-          <div class="empty-state">
-            Read the current Figma selection to preview node IDs.
-          </div>
-        </div>
-
-        <div class="copy-controls">
-          <label class="checkbox-row">
-            <input id="include-names" type="checkbox" checked />
-            <span>Include node names</span>
-          </label>
-
-          <fieldset class="format-fieldset">
-            <legend>Copy format</legend>
-            <div class="segmented-control">
-              <label>
-                <input type="radio" name="copy-format" value="compact" checked />
-                <span>Compact</span>
-              </label>
-              <label>
-                <input type="radio" name="copy-format" value="json" />
-                <span>JSON</span>
-              </label>
-            </div>
-          </fieldset>
-        </div>
-
-        <button id="copy-selection" class="button button-primary full-width" type="button" disabled>
-          Copy
+      <nav class="primary-tabs" role="tablist" aria-label="Plugin workflow">
+        <button
+          id="selection-tab"
+          class="primary-tab is-active"
+          type="button"
+          role="tab"
+          aria-selected="true"
+          aria-controls="selection-panel"
+        >
+          Selection ↔ IDs
         </button>
-        <div id="copy-status" class="status" data-tone="neutral" role="status" aria-live="polite">
-          Nothing to copy yet.
-        </div>
-      </section>
+        <button
+          id="image-export-tab"
+          class="primary-tab"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="image-export-panel"
+        >
+          Selection → Image export
+        </button>
+      </nav>
 
-      <section class="section" aria-labelledby="ids-heading">
-        <div class="section-heading compact-heading">
-          <h2 id="ids-heading">IDs <span aria-hidden="true">→</span> Selection</h2>
-        </div>
-
-        <label class="input-label" for="node-id-input">Paste node IDs or text containing IDs</label>
-        <textarea
-          id="node-id-input"
-          rows="5"
-          spellcheck="false"
-          placeholder="5309:30855 | Profile Details&#10;5309-27495"
-        ></textarea>
-
-        <div id="parse-status" class="status" data-tone="neutral" role="status" aria-live="polite">
-          No node IDs found yet.
-        </div>
-
-        <div class="button-row">
-          <button id="select-nodes" class="button button-primary" type="button" disabled>
-            Select nodes
-          </button>
-          <button id="clear-input" class="button button-secondary" type="button">
-            Clear
-          </button>
-        </div>
-
-        <div id="parsed-selection-panel" class="parsed-selection-panel" hidden>
-          <div class="parsed-selection-heading">
-            <div>
-              <h3>Resolved nodes</h3>
-              <span id="checked-count" class="checked-count"></span>
-            </div>
-            <div class="navigation-buttons" aria-label="Preview navigation">
-              <button
-                id="previous-node"
-                class="button button-icon button-secondary"
-                type="button"
-                aria-label="Focus previous node"
-                title="Focus previous node"
-                disabled
-              >
-                ↑
-              </button>
-              <button
-                id="next-node"
-                class="button button-icon button-secondary"
-                type="button"
-                aria-label="Focus next node"
-                title="Focus next node"
-                disabled
-              >
-                ↓
-              </button>
-            </div>
-          </div>
-
-          <div class="list-actions">
-            <button id="select-all" class="text-button" type="button">Select all</button>
-            <button id="clear-all" class="text-button" type="button">Clear all</button>
-          </div>
-
-          <div
-            id="parsed-selection-preview"
-            class="parsed-selection-preview"
-            role="list"
-            aria-label="Resolved nodes. Use Up and Down Arrow keys to focus nodes on the canvas."
-            tabindex="0"
-          ></div>
-
-          <div class="parsed-action-row">
+      <div
+        id="selection-panel"
+        class="tab-panel"
+        role="tabpanel"
+        aria-labelledby="selection-tab"
+      >
+        <section class="section" aria-labelledby="selection-heading">
+          <div class="section-heading">
+            <h2 id="selection-heading">
+              Selection <span aria-hidden="true">→</span> IDs
+            </h2>
             <button
-              id="copy-parsed-selection"
+              id="read-selection"
               class="button button-secondary"
               type="button"
-              disabled
             >
-              Copy to clipboard
-            </button>
-            <button
-              id="apply-selection"
-              class="button button-primary"
-              type="button"
-              disabled
-            >
-              Apply selection
+              Read current selection
             </button>
           </div>
+
           <div
-            id="selection-action-status"
-            class="status selection-action-status"
+            id="selection-preview"
+            class="table-scroll selection-table"
+            aria-live="polite"
+          >
+            <div class="empty-state">
+              Read the current Figma selection to preview node IDs.
+            </div>
+          </div>
+
+          <div class="copy-controls">
+            <label class="checkbox-row">
+              <input id="include-names" type="checkbox" checked />
+              <span>Include node names</span>
+            </label>
+
+            <fieldset class="format-fieldset">
+              <legend>Copy format</legend>
+              <div class="segmented-control">
+                <label>
+                  <input
+                    type="radio"
+                    name="copy-format"
+                    value="compact"
+                    checked
+                  />
+                  <span>Compact</span>
+                </label>
+                <label>
+                  <input type="radio" name="copy-format" value="json" />
+                  <span>JSON</span>
+                </label>
+              </div>
+            </fieldset>
+          </div>
+
+          <button
+            id="copy-selection"
+            class="button button-primary full-width"
+            type="button"
+            disabled
+          >
+            Copy
+          </button>
+          <div
+            id="copy-status"
+            class="status"
             data-tone="neutral"
             role="status"
             aria-live="polite"
-          ></div>
-        </div>
-      </section>
+          >
+            Nothing to copy yet.
+          </div>
+        </section>
+
+        <section class="section" aria-labelledby="ids-heading">
+          <div class="section-heading">
+            <h2 id="ids-heading">
+              IDs <span aria-hidden="true">→</span> Selection
+            </h2>
+            <div
+              class="view-switch"
+              role="tablist"
+              aria-label="IDs to Selection view"
+            >
+              <button
+                id="ids-input-tab"
+                type="button"
+                role="tab"
+                class="is-active"
+                aria-selected="true"
+                aria-controls="ids-input-view"
+              >
+                Input
+              </button>
+              <button
+                id="ids-resolved-tab"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="ids-resolved-view"
+                disabled
+              >
+                Resolved
+              </button>
+            </div>
+          </div>
+
+          <div
+            id="ids-input-view"
+            role="tabpanel"
+            aria-labelledby="ids-input-tab"
+          >
+            <label class="input-label" for="node-id-input">
+              Paste node IDs or text containing IDs
+            </label>
+            <textarea
+              id="node-id-input"
+              rows="5"
+              spellcheck="false"
+              placeholder="5309:30855 | Profile Details&#10;5309-27495"
+            ></textarea>
+
+            <div
+              id="parse-status"
+              class="status"
+              data-tone="neutral"
+              role="status"
+              aria-live="polite"
+            >
+              No node IDs found yet.
+            </div>
+
+            <div class="button-row">
+              <button
+                id="select-nodes"
+                class="button button-primary"
+                type="button"
+                disabled
+              >
+                Select nodes
+              </button>
+              <button
+                id="clear-input"
+                class="button button-secondary"
+                type="button"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div
+            id="ids-resolved-view"
+            role="tabpanel"
+            aria-labelledby="ids-resolved-tab"
+            hidden
+          >
+            <div class="table-toolbar">
+              <span id="checked-count" class="checked-count"></span>
+              <div class="navigation-buttons" aria-label="Canvas navigation">
+                <button
+                  id="previous-node"
+                  class="button button-icon button-secondary"
+                  type="button"
+                  aria-label="Focus previous node"
+                  title="Focus previous node"
+                  disabled
+                >
+                  ↑
+                </button>
+                <button
+                  id="next-node"
+                  class="button button-icon button-secondary"
+                  type="button"
+                  aria-label="Focus next node"
+                  title="Focus next node"
+                  disabled
+                >
+                  ↓
+                </button>
+              </div>
+            </div>
+
+            <div
+              id="parsed-selection-preview"
+              class="table-scroll identity-table"
+              role="grid"
+              aria-label="Resolved nodes. Use Up and Down Arrow keys to focus nodes on the canvas."
+              aria-busy="false"
+              tabindex="0"
+            >
+              <div class="data-grid identity-grid table-header" role="row">
+                <span class="sticky-check" role="columnheader">
+                  <input
+                    id="parsed-select-all"
+                    type="checkbox"
+                    aria-label="Select all resolved nodes"
+                  />
+                </span>
+                <span class="sticky-index" role="columnheader">#</span>
+                <span class="sticky-name" role="columnheader">Name</span>
+                <span role="columnheader">Node ID</span>
+                <span role="columnheader">Type</span>
+              </div>
+              <div id="parsed-selection-rows"></div>
+            </div>
+
+            <div class="parsed-action-row">
+              <button
+                id="copy-parsed-selection"
+                class="button button-secondary"
+                type="button"
+                disabled
+              >
+                Copy
+              </button>
+              <button
+                id="apply-selection"
+                class="button button-primary"
+                type="button"
+                disabled
+              >
+                Apply
+              </button>
+            </div>
+            <div
+              id="selection-action-status"
+              class="status"
+              data-tone="neutral"
+              role="status"
+              aria-live="polite"
+            ></div>
+          </div>
+        </section>
+      </div>
+
+      <div
+        id="image-export-panel"
+        class="tab-panel"
+        role="tabpanel"
+        aria-labelledby="image-export-tab"
+        hidden
+      >
+        <section class="section export-section" aria-labelledby="export-heading">
+          <div class="export-title-row">
+            <div>
+              <h2 id="export-heading">Selection → Image export</h2>
+              <p>Resolve IDs without changing the canvas · PNG 1x · atomic ZIP</p>
+            </div>
+            <div
+              class="view-switch"
+              role="tablist"
+              aria-label="Image export view"
+            >
+              <button
+                id="export-input-tab"
+                type="button"
+                role="tab"
+                class="is-active"
+                aria-selected="true"
+                aria-controls="export-input-view"
+              >
+                Input
+              </button>
+              <button
+                id="export-resolved-tab"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="export-resolved-view"
+                disabled
+              >
+                Resolved
+              </button>
+            </div>
+          </div>
+
+          <fieldset class="format-fieldset export-type-fieldset">
+            <legend>Export type</legend>
+            <div class="segmented-control export-type-control">
+              <label>
+                <input
+                  type="radio"
+                  name="export-type"
+                  value="Component page"
+                  checked
+                />
+                <span>Component page</span>
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="export-type"
+                  value="UX Key page"
+                />
+                <span>UX Key page</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div
+            id="export-input-view"
+            role="tabpanel"
+            aria-labelledby="export-input-tab"
+          >
+            <label class="input-label" for="export-node-id-input">
+              Paste node IDs or text containing IDs
+            </label>
+            <textarea
+              id="export-node-id-input"
+              rows="7"
+              spellcheck="false"
+              placeholder="5392:134853 | Home Page&#10;I6003:47907;6003:40969"
+            ></textarea>
+            <div
+              id="export-resolve-status"
+              class="status"
+              data-tone="neutral"
+              role="status"
+              aria-live="polite"
+            >
+              No node IDs found yet.
+            </div>
+            <div class="button-row">
+              <button
+                id="confirm-export-nodes"
+                class="button button-primary"
+                type="button"
+                disabled
+              >
+                Confirm
+              </button>
+              <button
+                id="clear-export-input"
+                class="button button-secondary"
+                type="button"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div
+            id="export-resolved-view"
+            role="tabpanel"
+            aria-labelledby="export-resolved-tab"
+            hidden
+          >
+            <div class="table-toolbar">
+              <span id="export-checked-count" class="checked-count"></span>
+              <div class="bulk-control">
+                <button
+                  id="bulk-write"
+                  class="button button-secondary"
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded="false"
+                >
+                  批量写入
+                </button>
+                <div
+                  id="bulk-field-menu"
+                  class="field-menu"
+                  role="menu"
+                  hidden
+                >
+                  <button type="button" role="menuitem" data-bulk-field="category">
+                    Category
+                  </button>
+                  <button type="button" role="menuitem" data-bulk-field="state">
+                    State
+                  </button>
+                  <button
+                    id="bulk-ux-scenario"
+                    type="button"
+                    role="menuitem"
+                    data-bulk-field="uxScenario"
+                    hidden
+                  >
+                    UX Scenario
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div
+              id="export-table"
+              class="table-scroll export-table"
+              role="grid"
+              aria-label="Confirmed image export nodes and metadata"
+              aria-busy="false"
+            >
+              <div
+                id="export-table-header"
+                class="data-grid export-grid table-header"
+                role="row"
+              >
+                <span class="sticky-check" role="columnheader">
+                  <input
+                    id="export-select-all"
+                    type="checkbox"
+                    aria-label="Select all export rows"
+                  />
+                </span>
+                <span class="sticky-index" role="columnheader">#</span>
+                <button
+                  id="sort-export-name"
+                  class="sticky-name sortable-header"
+                  type="button"
+                  role="columnheader"
+                  aria-label="Sort Name, currently original order"
+                >
+                  Name <span id="sort-export-name-indicator">↕</span>
+                </button>
+                <span role="columnheader">Node ID</span>
+                <span role="columnheader">Type</span>
+                <span role="columnheader">Category</span>
+                <span role="columnheader">State</span>
+                <span
+                  id="ux-scenario-heading"
+                  role="columnheader"
+                  hidden
+                >
+                  UX Scenario
+                </span>
+              </div>
+              <div id="export-rows"></div>
+            </div>
+
+            <button
+              id="export-images"
+              class="button button-primary full-width"
+              type="button"
+              disabled
+            >
+              Export PNG 1x + ZIP
+            </button>
+            <div
+              id="export-status"
+              class="status"
+              data-tone="neutral"
+              role="status"
+              aria-live="polite"
+            >
+              Confirm node IDs before exporting.
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
+
+    <div
+      id="bulk-modal"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bulk-modal-title"
+      hidden
+    >
+      <div class="modal">
+        <h2 id="bulk-modal-title">批量写入</h2>
+        <p id="bulk-modal-description"></p>
+        <label class="input-label" for="bulk-modal-input">Value</label>
+        <input id="bulk-modal-input" type="text" autocomplete="off" />
+        <div class="modal-actions">
+          <button
+            id="bulk-modal-cancel"
+            class="button button-secondary"
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            id="bulk-modal-confirm"
+            class="button button-primary"
+            type="button"
+            disabled
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
 
     <script>
       /*__UI_SCRIPT__*/
