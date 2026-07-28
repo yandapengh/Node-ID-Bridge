@@ -1,40 +1,54 @@
 import { parseNodeIds } from "../shared/parse-node-ids";
 import { serializeSelection } from "../shared/serialize-selection";
+import {
+  confirmResolvedRows,
+  createEmptyResolvedRowsState,
+  getHeaderCheckboxState,
+  invalidateResolvedRows,
+  setAllRowsChecked,
+  switchResolvedView,
+  type ResolvedView
+} from "../shared/ui-state";
 import type {
   CopyFormat,
-  NodeReference,
-  PluginToUiMessage,
-  UiToPluginMessage
+  NodeReference
 } from "../shared/types";
+import {
+  copyText,
+  getElement,
+  postToPlugin,
+  receivePluginMessage,
+  setStatus
+} from "./dom";
+import "./export-ui";
 
-type StatusTone = "neutral" | "success" | "error";
-
-function getElement<T extends HTMLElement>(id: string): T {
-  const element = document.getElementById(id);
-  if (element === null) {
-    throw new Error(`Missing UI element: ${id}`);
-  }
-  return element as T;
-}
+const selectionTab = getElement<HTMLButtonElement>("selection-tab");
+const imageExportTab = getElement<HTMLButtonElement>("image-export-tab");
+const selectionPanel = getElement<HTMLDivElement>("selection-panel");
+const imageExportPanel = getElement<HTMLDivElement>("image-export-panel");
 
 const readSelectionButton = getElement<HTMLButtonElement>("read-selection");
 const selectionPreview = getElement<HTMLDivElement>("selection-preview");
 const includeNamesInput = getElement<HTMLInputElement>("include-names");
 const copyButton = getElement<HTMLButtonElement>("copy-selection");
 const copyStatus = getElement<HTMLDivElement>("copy-status");
+
+const idsInputTab = getElement<HTMLButtonElement>("ids-input-tab");
+const idsResolvedTab = getElement<HTMLButtonElement>("ids-resolved-tab");
+const idsInputView = getElement<HTMLDivElement>("ids-input-view");
+const idsResolvedView = getElement<HTMLDivElement>("ids-resolved-view");
 const nodeIdInput = getElement<HTMLTextAreaElement>("node-id-input");
 const parseStatus = getElement<HTMLDivElement>("parse-status");
 const selectNodesButton = getElement<HTMLButtonElement>("select-nodes");
 const clearInputButton = getElement<HTMLButtonElement>("clear-input");
-const parsedSelectionPanel = getElement<HTMLDivElement>(
-  "parsed-selection-panel"
-);
 const parsedSelectionPreview = getElement<HTMLDivElement>(
   "parsed-selection-preview"
 );
+const parsedSelectionRows = getElement<HTMLDivElement>(
+  "parsed-selection-rows"
+);
+const parsedSelectAll = getElement<HTMLInputElement>("parsed-select-all");
 const checkedCount = getElement<HTMLSpanElement>("checked-count");
-const selectAllButton = getElement<HTMLButtonElement>("select-all");
-const clearAllButton = getElement<HTMLButtonElement>("clear-all");
 const previousNodeButton = getElement<HTMLButtonElement>("previous-node");
 const nextNodeButton = getElement<HTMLButtonElement>("next-node");
 const copyParsedSelectionButton = getElement<HTMLButtonElement>(
@@ -46,8 +60,7 @@ const selectionActionStatus = getElement<HTMLDivElement>(
 );
 
 let selectedNodes: NodeReference[] = [];
-let parsedNodes: NodeReference[] = [];
-let checkedNodeIds = new Set<string>();
+let parsedState = createEmptyResolvedRowsState();
 let focusedNodeIndex: number | null = null;
 let pendingFocusId: string | null = null;
 let hasPendingApply = false;
@@ -55,22 +68,18 @@ let isSelecting = false;
 let isFocusing = false;
 let isApplying = false;
 
-function postToPlugin(message: UiToPluginMessage): void {
-  parent.postMessage({ pluginMessage: message }, "*");
-}
-
-function setStatus(
-  element: HTMLElement,
-  message: string,
-  tone: StatusTone
-): void {
-  element.textContent = message;
-  element.dataset.tone = tone;
+function setPrimaryTab(tab: "selection" | "export"): void {
+  const showSelection = tab === "selection";
+  selectionPanel.hidden = !showSelection;
+  imageExportPanel.hidden = showSelection;
+  selectionTab.classList.toggle("is-active", showSelection);
+  imageExportTab.classList.toggle("is-active", !showSelection);
+  selectionTab.setAttribute("aria-selected", String(showSelection));
+  imageExportTab.setAttribute("aria-selected", String(!showSelection));
 }
 
 function renderSelection(nodes: readonly NodeReference[]): void {
   selectionPreview.replaceChildren();
-
   if (nodes.length === 0) {
     const emptyState = document.createElement("div");
     emptyState.className = "empty-state";
@@ -81,11 +90,17 @@ function renderSelection(nodes: readonly NodeReference[]): void {
   }
 
   const header = document.createElement("div");
-  header.className = "preview-header";
-  header.setAttribute("aria-hidden", "true");
-
-  for (const label of ["#", "Name", "Node ID", "Type"]) {
+  header.className = "data-grid selection-grid table-header";
+  header.setAttribute("role", "row");
+  for (const [label, className] of [
+    ["#", "sticky-index"],
+    ["Name", "sticky-name"],
+    ["Node ID", ""],
+    ["Type", ""]
+  ] as const) {
     const cell = document.createElement("span");
+    cell.className = className;
+    cell.setAttribute("role", "columnheader");
     cell.textContent = label;
     header.append(cell);
   }
@@ -93,14 +108,15 @@ function renderSelection(nodes: readonly NodeReference[]): void {
 
   nodes.forEach((node, index) => {
     const row = document.createElement("div");
-    row.className = "preview-row";
+    row.className = "data-grid selection-grid table-row";
+    row.setAttribute("role", "row");
 
     const indexCell = document.createElement("span");
-    indexCell.className = "node-index";
+    indexCell.className = "sticky-index";
     indexCell.textContent = String(index + 1);
 
     const nameCell = document.createElement("span");
-    nameCell.className = "node-name";
+    nameCell.className = "sticky-name node-name";
     nameCell.textContent = node.name;
     nameCell.title = node.name;
 
@@ -120,16 +136,26 @@ function renderSelection(nodes: readonly NodeReference[]): void {
 }
 
 function getCopyFormat(): CopyFormat {
-  const checkedInput = document.querySelector<HTMLInputElement>(
+  const input = document.querySelector<HTMLInputElement>(
     'input[name="copy-format"]:checked'
   );
-  return checkedInput?.value === "json" ? "json" : "compact";
+  return input?.value === "json" ? "json" : "compact";
+}
+
+function showIdsView(view: ResolvedView): void {
+  parsedState = switchResolvedView(parsedState, view);
+  const showInput = parsedState.view === "input";
+  idsInputView.hidden = !showInput;
+  idsResolvedView.hidden = showInput;
+  idsInputTab.classList.toggle("is-active", showInput);
+  idsResolvedTab.classList.toggle("is-active", !showInput);
+  idsInputTab.setAttribute("aria-selected", String(showInput));
+  idsResolvedTab.setAttribute("aria-selected", String(!showInput));
 }
 
 function updateParseStatus(): void {
   const ids = parseNodeIds(nodeIdInput.value);
   selectNodesButton.disabled = ids.length === 0 || isSelecting;
-
   if (nodeIdInput.value.trim().length === 0) {
     setStatus(parseStatus, "No node IDs found yet.", "neutral");
   } else if (ids.length === 0) {
@@ -148,30 +174,39 @@ function updateParseStatus(): void {
 }
 
 function getCheckedNodes(): NodeReference[] {
-  return parsedNodes.filter((node) => checkedNodeIds.has(node.id));
+  return parsedState.nodes.filter((node) =>
+    parsedState.checkedNodeIds.has(node.id)
+  );
 }
 
 function updateInputAvailability(): void {
   const isBusy = isSelecting || isFocusing || isApplying;
   nodeIdInput.disabled = isBusy;
   clearInputButton.disabled = isBusy;
+  idsResolvedTab.disabled = parsedState.nodes.length === 0 || isSelecting;
 }
 
 function updateParsedControls(): void {
-  const selectedCount = checkedNodeIds.size;
-  const hasNodes = parsedNodes.length > 0;
+  const checkboxState = getHeaderCheckboxState(
+    parsedState.nodes,
+    parsedState.checkedNodeIds
+  );
+  const hasNodes = parsedState.nodes.length > 0;
   const isBusy = isFocusing || isApplying;
-
-  checkedCount.textContent = `${selectedCount} of ${parsedNodes.length} checked`;
-  selectAllButton.disabled =
-    !hasNodes || selectedCount === parsedNodes.length || isApplying;
-  clearAllButton.disabled = !hasNodes || selectedCount === 0 || isApplying;
-  copyParsedSelectionButton.disabled = selectedCount === 0 || isApplying;
-  applySelectionButton.disabled = selectedCount === 0 || isBusy;
+  parsedSelectAll.checked = checkboxState.checked;
+  parsedSelectAll.indeterminate = checkboxState.indeterminate;
+  parsedSelectAll.disabled = !hasNodes || isApplying;
+  checkedCount.textContent = `${checkboxState.selectedCount} of ${parsedState.nodes.length} checked`;
+  copyParsedSelectionButton.disabled =
+    checkboxState.selectedCount === 0 || isApplying;
+  applySelectionButton.disabled =
+    checkboxState.selectedCount === 0 || isBusy;
   previousNodeButton.disabled =
     !hasNodes || isBusy || focusedNodeIndex === 0;
   nextNodeButton.disabled =
-    !hasNodes || isBusy || focusedNodeIndex === parsedNodes.length - 1;
+    !hasNodes ||
+    isBusy ||
+    focusedNodeIndex === parsedState.nodes.length - 1;
   parsedSelectionPreview.setAttribute("aria-busy", String(isBusy));
   updateInputAvailability();
 }
@@ -180,118 +215,99 @@ function scrollFocusedRowIntoView(): void {
   if (focusedNodeIndex === null) {
     return;
   }
-
-  const focusedRow = parsedSelectionPreview.querySelector<HTMLElement>(
-    `[data-node-index="${focusedNodeIndex}"]`
-  );
-  focusedRow?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  parsedSelectionRows
+    .querySelector<HTMLElement>(`[data-node-index="${focusedNodeIndex}"]`)
+    ?.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
 function renderParsedSelection(): void {
-  parsedSelectionPreview.replaceChildren();
-
-  parsedNodes.forEach((node, index) => {
+  parsedSelectionRows.replaceChildren();
+  parsedState.nodes.forEach((node, index) => {
     const row = document.createElement("div");
     const isFocused = index === focusedNodeIndex;
-    row.className = `parsed-node-row${isFocused ? " is-focused" : ""}`;
+    row.className = `data-grid identity-grid table-row${isFocused ? " is-focused" : ""}`;
     row.dataset.nodeIndex = String(index);
-    row.setAttribute("role", "listitem");
+    row.setAttribute("role", "row");
     if (isFocused) {
       row.setAttribute("aria-current", "true");
     }
 
+    const checkCell = document.createElement("span");
+    checkCell.className = "sticky-check";
     const checkbox = document.createElement("input");
-    checkbox.className = "parsed-node-checkbox";
     checkbox.type = "checkbox";
-    checkbox.checked = checkedNodeIds.has(node.id);
+    checkbox.checked = parsedState.checkedNodeIds.has(node.id);
     checkbox.disabled = isApplying;
-    checkbox.setAttribute("aria-label", `Keep ${node.name} in final selection`);
+    checkbox.setAttribute("aria-label", `Include ${node.name}`);
     checkbox.addEventListener("click", (event) => event.stopPropagation());
     checkbox.addEventListener("change", () => {
+      const nextChecked = new Set(parsedState.checkedNodeIds);
       if (checkbox.checked) {
-        checkedNodeIds.add(node.id);
+        nextChecked.add(node.id);
       } else {
-        checkedNodeIds.delete(node.id);
+        nextChecked.delete(node.id);
       }
+      parsedState = { ...parsedState, checkedNodeIds: nextChecked };
       updateParsedControls();
       setStatus(
         selectionActionStatus,
-        `${checkedNodeIds.size} of ${parsedNodes.length} nodes checked.`,
+        `${getHeaderCheckboxState(parsedState.nodes, nextChecked).selectedCount} of ${parsedState.nodes.length} nodes checked.`,
         "neutral"
       );
     });
+    checkCell.append(checkbox);
 
     const indexCell = document.createElement("span");
-    indexCell.className = "parsed-node-index";
+    indexCell.className = "sticky-index";
     indexCell.textContent = String(index + 1);
 
-    const details = document.createElement("span");
-    details.className = "parsed-node-details";
+    const nameCell = document.createElement("span");
+    nameCell.className = "sticky-name node-name";
+    nameCell.textContent = node.name;
+    nameCell.title = node.name;
 
-    const primary = document.createElement("span");
-    primary.className = "parsed-node-primary";
+    const idCell = document.createElement("span");
+    idCell.className = "node-id";
+    idCell.textContent = node.id;
+    idCell.title = node.id;
 
-    const name = document.createElement("span");
-    name.className = "parsed-node-name";
-    name.textContent = node.name;
-    name.title = node.name;
+    const typeCell = document.createElement("span");
+    typeCell.className = "node-type";
+    typeCell.textContent = node.type;
+    typeCell.title = node.type;
 
-    const type = document.createElement("span");
-    type.className = "parsed-node-type";
-    type.textContent = node.type;
-    type.title = node.type;
-    primary.append(name, type);
-
-    const metadata = document.createElement("span");
-    metadata.className = "parsed-node-metadata";
-
-    const id = document.createElement("span");
-    id.className = "node-id";
-    id.textContent = node.id;
-    id.title = node.id;
-
-    const page = document.createElement("span");
-    page.className = "parsed-node-page";
-    page.textContent = node.pageName;
-    page.title = node.pageName;
-    metadata.append(id, page);
-
-    details.append(primary, metadata);
-    row.append(checkbox, indexCell, details);
+    row.append(checkCell, indexCell, nameCell, idCell, typeCell);
     row.addEventListener("click", () => focusNodeAt(index));
-    parsedSelectionPreview.append(row);
+    parsedSelectionRows.append(row);
   });
-
   updateParsedControls();
   scrollFocusedRowIntoView();
 }
 
 function clearParsedSelection(): void {
-  parsedNodes = [];
-  checkedNodeIds = new Set<string>();
+  parsedState = invalidateResolvedRows(parsedState);
   focusedNodeIndex = null;
   pendingFocusId = null;
   hasPendingApply = false;
   isFocusing = false;
   isApplying = false;
-  parsedSelectionPanel.hidden = true;
-  parsedSelectionPreview.replaceChildren();
-  checkedCount.textContent = "";
+  idsResolvedTab.disabled = true;
+  parsedSelectionRows.replaceChildren();
   setStatus(selectionActionStatus, "", "neutral");
+  showIdsView("input");
   updateParsedControls();
 }
 
 function focusNodeAt(index: number): void {
   if (
     index < 0 ||
-    index >= parsedNodes.length ||
+    index >= parsedState.nodes.length ||
     isFocusing ||
     isApplying
   ) {
     return;
   }
-
-  const node = parsedNodes[index];
+  const node = parsedState.nodes[index];
   if (node === undefined) {
     return;
   }
@@ -303,66 +319,29 @@ function focusNodeAt(index: number): void {
   parsedSelectionPreview.focus({ preventScroll: true });
   setStatus(
     selectionActionStatus,
-    `Focusing ${index + 1} of ${parsedNodes.length}: ${node.name}…`,
+    `Focusing ${index + 1} of ${parsedState.nodes.length}: ${node.name}…`,
     "neutral"
   );
   postToPlugin({ type: "focus-node", id: node.id });
 }
 
 function moveFocus(direction: -1 | 1): void {
-  if (parsedNodes.length === 0) {
+  if (parsedState.nodes.length === 0) {
     return;
   }
-
   const nextIndex =
     focusedNodeIndex === null
       ? direction === 1
         ? 0
-        : parsedNodes.length - 1
+        : parsedState.nodes.length - 1
       : focusedNodeIndex + direction;
   focusNodeAt(nextIndex);
 }
 
-async function copyText(text: string): Promise<void> {
-  if (navigator.clipboard?.writeText !== undefined) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return;
-    } catch {
-      // Continue to the document.execCommand fallback below.
-    }
-  }
-
-  const fallbackInput = document.createElement("textarea");
-  fallbackInput.value = text;
-  fallbackInput.setAttribute("readonly", "");
-  fallbackInput.style.position = "fixed";
-  fallbackInput.style.opacity = "0";
-  fallbackInput.style.pointerEvents = "none";
-  document.body.append(fallbackInput);
-  fallbackInput.select();
-  fallbackInput.setSelectionRange(0, fallbackInput.value.length);
-
-  const copied = document.execCommand("copy");
-  fallbackInput.remove();
-
-  if (!copied) {
-    throw new Error("Clipboard access was denied.");
-  }
-}
-
-function receivePluginMessage(data: unknown): PluginToUiMessage | null {
-  if (typeof data !== "object" || data === null) {
-    return null;
-  }
-
-  const envelope = data as { pluginMessage?: unknown };
-  if (typeof envelope.pluginMessage !== "object" || envelope.pluginMessage === null) {
-    return null;
-  }
-
-  return envelope.pluginMessage as PluginToUiMessage;
-}
+selectionTab.addEventListener("click", () => setPrimaryTab("selection"));
+imageExportTab.addEventListener("click", () => setPrimaryTab("export"));
+idsInputTab.addEventListener("click", () => showIdsView("input"));
+idsResolvedTab.addEventListener("click", () => showIdsView("resolved"));
 
 readSelectionButton.addEventListener("click", () => {
   readSelectionButton.disabled = true;
@@ -374,19 +353,14 @@ copyButton.addEventListener("click", async () => {
   if (selectedNodes.length === 0) {
     return;
   }
-
-  const text = serializeSelection(selectedNodes, {
-    format: getCopyFormat(),
-    includeNames: includeNamesInput.checked
-  });
-
-  if (text.length === 0) {
-    return;
-  }
-
   copyButton.disabled = true;
   try {
-    await copyText(text);
+    await copyText(
+      serializeSelection(selectedNodes, {
+        format: getCopyFormat(),
+        includeNames: includeNamesInput.checked
+      })
+    );
     setStatus(
       copyStatus,
       `Success: copied ${selectedNodes.length} node${selectedNodes.length === 1 ? "" : "s"}.`,
@@ -411,7 +385,6 @@ selectNodesButton.addEventListener("click", () => {
     updateParseStatus();
     return;
   }
-
   clearParsedSelection();
   isSelecting = true;
   updateInputAvailability();
@@ -432,47 +405,44 @@ clearInputButton.addEventListener("click", () => {
   nodeIdInput.focus();
 });
 
-selectAllButton.addEventListener("click", () => {
-  checkedNodeIds = new Set(parsedNodes.map((node) => node.id));
+parsedSelectAll.addEventListener("change", () => {
+  parsedState = {
+    ...parsedState,
+    checkedNodeIds: setAllRowsChecked(
+      parsedState.nodes,
+      parsedSelectAll.checked
+    )
+  };
   renderParsedSelection();
   setStatus(
     selectionActionStatus,
-    `All ${parsedNodes.length} nodes are checked.`,
+    parsedSelectAll.checked
+      ? `All ${parsedState.nodes.length} nodes are checked.`
+      : "No nodes are checked.",
     "neutral"
   );
 });
 
-clearAllButton.addEventListener("click", () => {
-  checkedNodeIds.clear();
-  renderParsedSelection();
-  setStatus(selectionActionStatus, "No nodes are checked.", "neutral");
-});
-
 previousNodeButton.addEventListener("click", () => moveFocus(-1));
 nextNodeButton.addEventListener("click", () => moveFocus(1));
-
 parsedSelectionPreview.addEventListener("keydown", (event) => {
   if (event.key !== "ArrowUp" && event.key !== "ArrowDown") {
     return;
   }
-
   event.preventDefault();
   moveFocus(event.key === "ArrowUp" ? -1 : 1);
 });
 
 copyParsedSelectionButton.addEventListener("click", async () => {
   const nodes = getCheckedNodes();
-  const text = serializeSelection(nodes, {
-    format: "compact",
-    includeNames: true
-  });
-  if (text.length === 0) {
+  if (nodes.length === 0) {
     return;
   }
-
   copyParsedSelectionButton.disabled = true;
   try {
-    await copyText(text);
+    await copyText(
+      serializeSelection(nodes, { format: "compact", includeNames: true })
+    );
     setStatus(
       selectionActionStatus,
       `Success: copied ${nodes.length} checked node${nodes.length === 1 ? "" : "s"}.`,
@@ -491,7 +461,6 @@ applySelectionButton.addEventListener("click", () => {
   if (ids.length === 0) {
     return;
   }
-
   hasPendingApply = true;
   isApplying = true;
   renderParsedSelection();
@@ -524,22 +493,24 @@ window.addEventListener("message", (event: MessageEvent<unknown>) => {
       );
       break;
     }
-    case "selection-read-error": {
+    case "selection-read-error":
       readSelectionButton.disabled = false;
       setStatus(copyStatus, `Read failed: ${message.message}`, "error");
       break;
-    }
     case "select-success": {
       isSelecting = false;
-      parsedNodes = message.nodes;
-      checkedNodeIds = new Set(message.nodes.map((node) => node.id));
+      parsedState = confirmResolvedRows(
+        nodeIdInput.value,
+        message.nodes,
+        false
+      );
       focusedNodeIndex = null;
-      parsedSelectionPanel.hidden = false;
       renderParsedSelection();
-      updateParseStatus();
+      showIdsView("input");
+      updateInputAvailability();
       setStatus(
         parseStatus,
-        `Success: selected ${message.count} node${message.count === 1 ? "" : "s"} on “${message.pageName}”.`,
+        `Success: selected ${message.count} node${message.count === 1 ? "" : "s"} on “${message.pageName}”. Open Resolved to review.`,
         "success"
       );
       setStatus(
@@ -566,37 +537,36 @@ window.addEventListener("message", (event: MessageEvent<unknown>) => {
       );
       break;
     }
-    case "select-error": {
+    case "select-error":
       isSelecting = false;
       updateInputAvailability();
       updateParseStatus();
       setStatus(parseStatus, `Selection failed: ${message.message}`, "error");
       break;
-    }
     case "focus-node-success": {
       if (message.id !== pendingFocusId) {
         break;
       }
-
       const focusedNode =
-        focusedNodeIndex === null ? null : parsedNodes[focusedNodeIndex];
+        focusedNodeIndex === null
+          ? null
+          : parsedState.nodes[focusedNodeIndex];
       pendingFocusId = null;
       isFocusing = false;
       renderParsedSelection();
       setStatus(
         selectionActionStatus,
-        focusedNode == null
+        focusedNode === undefined || focusedNode === null
           ? `Focused node on “${message.pageName}”.`
-          : `Viewing ${focusedNodeIndex! + 1} of ${parsedNodes.length}: ${focusedNode.name} on “${message.pageName}”.`,
+          : `Viewing ${focusedNodeIndex! + 1} of ${parsedState.nodes.length}: ${focusedNode.name} on “${message.pageName}”.`,
         "success"
       );
       break;
     }
-    case "focus-node-error": {
+    case "focus-node-error":
       if (message.id !== pendingFocusId) {
         break;
       }
-
       pendingFocusId = null;
       isFocusing = false;
       focusedNodeIndex = null;
@@ -607,12 +577,10 @@ window.addEventListener("message", (event: MessageEvent<unknown>) => {
         "error"
       );
       break;
-    }
-    case "apply-selection-success": {
+    case "apply-selection-success":
       if (!hasPendingApply) {
         break;
       }
-
       hasPendingApply = false;
       isApplying = false;
       focusedNodeIndex = null;
@@ -623,12 +591,10 @@ window.addEventListener("message", (event: MessageEvent<unknown>) => {
         "success"
       );
       break;
-    }
-    case "apply-selection-error": {
+    case "apply-selection-error":
       if (!hasPendingApply) {
         break;
       }
-
       hasPendingApply = false;
       isApplying = false;
       renderParsedSelection();
@@ -638,6 +604,5 @@ window.addEventListener("message", (event: MessageEvent<unknown>) => {
         "error"
       );
       break;
-    }
   }
 });
