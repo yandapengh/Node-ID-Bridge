@@ -1,23 +1,21 @@
 # Node ID Bridge
 
-Node ID Bridge is a focused Figma Design plugin that bridges canvas selections and Figma node IDs. Its two independent tabs copy or restore canvas selections and resolve pasted IDs into annotated PNG batches for DesignDiffAgent.
+Node ID Bridge is a local Figma Design plugin for copying node IDs, restoring canvas selections, and exporting annotated PNG batches for DesignDiffAgent.
 
-The plugin runs locally, has no allowed network domains, and does not send design data anywhere.
+Current release: **V1.2** (`1.2.0`).
 
-Current usability release: **V1.1** (`1.1.0`).
+The plugin has no allowed network domains and does not send design data anywhere.
 
 ## Features
 
-- Read the current Figma selection and preview each node's name, ID, and type.
-- Copy selection data as Compact text or compact JSON, with optional node names.
-- Extract ordinary node IDs, URL-style IDs, and instance-context IDs from arbitrary text.
-- Keep independent input, resolution, checkbox, and draft state while switching between **Selection ↔ IDs** and **Selection → Image export**.
-- Review resolved nodes in a horizontally scrollable table, keep or clear individual nodes with the header checkbox, and copy the checked list as `ID | Name`.
-- Step through resolved nodes with the arrow controls or keyboard, then restore the checked nodes with **Apply selection**.
-- Resolve all IDs before changing the selection, preventing partial selection on errors or across pages.
-- Resolve a separate set of export IDs across Pages without changing the current Figma selection, Page, or viewport.
-- Export checked rows as PNG 1x for either **Component page** or **UX Key page**, with inline or bulk-written metadata.
-- Download an atomic ZIP containing `input/<export type>/` PNGs plus one batch-specific UTF-8 manifest. Any node failure prevents the ZIP download.
+- Read the current Figma selection and copy node IDs as Compact text or JSON.
+- Resolve pasted IDs into a review table before copying or applying a selection.
+- Keep independent input, resolved rows, checkbox state, and drafts across the two workflow tabs.
+- Focus resolved nodes from the table with row clicks, buttons, or the Up/Down Arrow keys.
+- Resolve export IDs across multiple Figma Pages without changing the current Page, selection, or viewport.
+- Edit Component or UX Key metadata inline or write one field to all checked rows.
+- Export only checked rows as PNG 1x in their original pasted-ID order.
+- Download one atomic ZIP with PNG files and a `schemaVersion: 2` manifest.
 
 Supported input examples:
 
@@ -31,25 +29,163 @@ https://www.figma.com/design/example/file?node-id=5309-30855
 
 Instance-context IDs beginning with `I` are preserved as one complete node address, including nested `;` path segments.
 
-## V1.1 workflow
+## Quick start for regular users
 
-1. Paste node IDs or any text containing node IDs, then choose **Select nodes**.
-2. Selection succeeds atomically and stays in **Input**. Open **Resolved** when you want to review the table; every node is checked initially.
-3. Use row checkboxes or the header checkbox to build the final selection. Its half-selected state reflects a partial selection.
-4. Click a row or use ↑/↓ to inspect each node on the Figma canvas. Inspection does not change its checkbox.
-5. Choose **Copy** to copy checked nodes as `ID | Figma name`, or **Apply** to restore checked nodes as the final canvas selection.
+Node ID Bridge is not a command-line program and does not use `npm start`. Terminal commands prepare or rebuild the plugin; the plugin itself runs inside the Figma Desktop app.
 
-Changing or clearing the input invalidates its old resolved rows. Node validation is atomic: missing, deleted, non-selectable, or cross-page nodes do not produce a partial final selection.
+The repository includes prebuilt files in `dist/`, so a regular user can load the plugin immediately after cloning or extracting the downloaded ZIP. Rebuilding with Node.js is recommended after pulling updates or when `dist/` is missing.
 
-## Image export
+### Requirements
 
-1. Open **Selection → Image export**, choose **Component page** or **UX Key page**, and paste node IDs.
-2. Choose **Confirm**. Every ID must resolve, but the nodes may span Pages; confirmation never changes the canvas selection or viewport.
-3. In the automatically opened table, check the rows to update and export. Use **批量写入** for one checked-row field or edit metadata inline.
-4. For Component pages, **Category** and **State** are required. For UX Key pages, **UX Scenario** is required while **Category** and **State** are optional. Unchecked rows are not validated or exported, and their drafts remain intact.
-5. Click the **Name** header to cycle original, ascending, and descending display order. Choose **Export PNG 1x + ZIP** when ready.
+- Figma Desktop
+- Git, only when using `git clone`
+- Node.js and npm, only when rebuilding the plugin
 
-The main thread resolves every checked row again by Node ID before export. If a Figma name changed, the manifest and PNG filename use the current name while the entered fields remain linked to the same Node ID. Display sorting never changes ZIP or manifest order: both follow the original pasted-ID order. ZIP entries use this shape:
+If Node.js is needed, install a current Node.js LTS release from [nodejs.org](https://nodejs.org/), then close and reopen the terminal before continuing.
+
+### Windows — Command Prompt (CMD)
+
+#### Option A: clone the repository
+
+Open **Command Prompt**, then run:
+
+```bat
+cd /d "%USERPROFILE%\Downloads"
+git clone https://github.com/yandapengh/Node-ID-Bridge.git
+cd "Node-ID-Bridge"
+```
+
+#### Option B: download and extract the ZIP
+
+1. On GitHub, choose **Code → Download ZIP**.
+2. Extract the ZIP.
+3. Open **Command Prompt** and enter the extracted folder. The default folder name is usually `Node-ID-Bridge-main`:
+
+```bat
+cd /d "%USERPROFILE%\Downloads\Node-ID-Bridge-main"
+```
+
+If the folder was extracted elsewhere, replace the path with its actual location. Keep the quotation marks when the path contains spaces.
+
+#### Verify or rebuild on Windows
+
+The prebuilt plugin should contain these two files:
+
+```bat
+dir dist
+```
+
+To rebuild from source, verify Node.js and npm, install dependencies, and run the build:
+
+```bat
+node --version
+npm --version
+npm install
+npm run build
+```
+
+The build is ready when the terminal prints:
+
+```text
+Built dist/main.js and dist/ui.html
+```
+
+### macOS — Terminal
+
+#### Option A: clone the repository
+
+Open **Terminal**, then run:
+
+```bash
+cd "$HOME/Downloads"
+git clone https://github.com/yandapengh/Node-ID-Bridge.git
+cd "Node-ID-Bridge"
+```
+
+#### Option B: download and extract the ZIP
+
+1. On GitHub, choose **Code → Download ZIP**.
+2. Double-click the downloaded ZIP to extract it.
+3. Open **Terminal** and enter the extracted folder:
+
+```bash
+cd "$HOME/Downloads/Node-ID-Bridge-main"
+```
+
+If the folder was extracted elsewhere, replace the path with its actual location. Keep the quotation marks when the path contains spaces.
+
+#### Verify or rebuild on macOS
+
+The prebuilt plugin should contain these two files:
+
+```bash
+ls -l dist
+```
+
+To rebuild from source, verify Node.js and npm, install dependencies, and run the build:
+
+```bash
+node --version
+npm --version
+npm install
+npm run build
+```
+
+The build is ready when the terminal prints:
+
+```text
+Built dist/main.js and dist/ui.html
+```
+
+## Load and run the plugin in Figma Desktop
+
+After cloning, extracting, or rebuilding:
+
+1. Open the Figma Desktop app and open any Figma Design file.
+2. Open **Plugins → Development → Import plugin from manifest…**.
+3. Select `manifest.json` in the root of the `Node-ID-Bridge` folder.
+4. Open **Plugins → Development → Node ID Bridge** to run it.
+
+After rebuilding, close and rerun the development plugin in Figma so it reloads `dist/main.js` and `dist/ui.html`.
+
+## How to use Selection ↔ IDs
+
+### Selection → IDs
+
+1. Select one or more nodes on the Figma canvas.
+2. Open **Selection ↔ IDs**.
+3. Choose **Read current selection**.
+4. Choose Compact or JSON and whether node names should be included.
+5. Choose **Copy**.
+
+### IDs → Selection
+
+1. Paste node IDs or text containing node IDs.
+2. Choose **Select nodes**. All IDs are validated before the canvas selection changes.
+3. The plugin stays on **Input** after success; open **Resolved** to review the table.
+4. Use row checkboxes or the header checkbox to choose the final set.
+5. Click a row or use ↑/↓ to focus nodes on the canvas.
+6. Choose **Copy** for the checked ID list or **Apply** for the checked canvas selection.
+
+Changing or clearing the input invalidates the previous resolved rows. Missing, deleted, non-selectable, or cross-page nodes never produce a partial applied selection.
+
+## How to use Selection → Image export
+
+1. Open **Selection → Image export**.
+2. Choose **Component page** or **UX Key page**.
+3. Paste node IDs and choose **Confirm**. IDs may span Pages, and confirmation does not change the canvas.
+4. In the table, check the rows that should be updated and exported.
+5. Edit metadata inline or use **批量写入** to write a field to every checked row.
+6. For Component pages, fill required **Category** and **State** fields.
+7. For UX Key pages, fill required **UX Scenario**; **Category** and **State** are optional.
+8. Optionally click the **Name** header to change display sorting.
+9. Choose **Export PNG 1x + ZIP**.
+
+Unchecked rows are not validated, updated, or exported, but their drafts are retained. Display sorting never changes ZIP or manifest order: output always follows the original pasted-ID order.
+
+The main thread resolves each checked Node ID again before exporting. If a Figma name changed, the manifest and PNG filename use the current name and the table shows a warning. If any row fails, the whole batch fails and no ZIP is downloaded.
+
+ZIP entries use this shape:
 
 ```text
 input/
@@ -58,36 +194,55 @@ input/
     └── manifest--component-page--20260727T163012123Z.json
 ```
 
-Each export is an independent batch. The plugin does not merge previous manifests, hash images, call localhost, or send data over the network.
+Every generated manifest uses `schemaVersion: 2`. Component records contain required `category` and `state`. UX Key records contain required `uxScenario`; non-empty optional `category` and `state` values are included, while empty optional fields are omitted.
 
-Every generated manifest uses `schemaVersion: 2`. Component records contain `nodeId`, current `name`, `type`, required `category`, required `state`, and `imagePath`. UX Key records contain required `uxScenario`; non-empty `category` and `state` drafts are included, while empty optional fields are omitted.
+## Updating an existing clone
+
+### Windows CMD
+
+```bat
+cd /d "C:\path\to\Node-ID-Bridge"
+git pull
+npm install
+npm run build
+```
+
+### macOS Terminal
+
+```bash
+cd "/path/to/Node-ID-Bridge"
+git pull
+npm install
+npm run build
+```
+
+Rerun the plugin in Figma Desktop after the build completes.
+
+## Troubleshooting
+
+- **`git` is not recognized:** install Git, reopen Command Prompt or Terminal, and retry. Alternatively, use **Download ZIP**.
+- **`node` or `npm` is not recognized:** install Node.js LTS, close and reopen the terminal, then check `node --version` and `npm --version`.
+- **`dist` is missing:** run `npm install` followed by `npm run build`.
+- **Figma cannot find the plugin files:** select the root `manifest.json`, not a file inside `dist/`.
+- **Changes do not appear in Figma:** run `npm run build`, then close and rerun the development plugin.
 
 ## Development
 
+Install dependencies and run the complete verification pipeline:
+
 ```bash
 npm install
+npm run check
+```
+
+Individual commands:
+
+```bash
 npm run typecheck
 npm test
 npm run build
 ```
 
-Run the full verification pipeline with:
+Build output is written to `dist/main.js` and `dist/ui.html`. Both files are committed so downloaded repository snapshots can be loaded directly in Figma Desktop.
 
-```bash
-npm run check
-```
-
-Build output is written to `dist/main.js` and `dist/ui.html`.
-
-## Load in Figma Desktop
-
-1. Run `npm install` and `npm run build` in this directory.
-2. Open the Figma Desktop app and a Figma Design file.
-3. Open **Plugins → Development → Import plugin from manifest…**.
-4. Choose this project's `manifest.json`.
-5. Launch **Node ID Bridge** from **Plugins → Development**.
-
-After source changes, run `npm run build`, then reopen or rerun the development plugin in Figma.
-
-The manifest contains a stable local-development ID. If you publish the plugin,
-replace it with the plugin ID assigned by Figma during registration.
+The manifest contains a stable local-development ID. If you publish the plugin through the Figma Community, replace it with the plugin ID assigned by Figma during registration.
