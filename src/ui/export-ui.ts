@@ -96,6 +96,8 @@ let isResolving = false;
 let isExporting = false;
 let activeBatchId: string | null = null;
 let activeBulkField: ExportField | null = null;
+let focusedExportNodeId: string | null = null;
+let pendingExportFocusId: string | null = null;
 let drafts = new Map<string, ExportDraft>();
 const rowStatuses = new Map<string, RowStatus>();
 const rowStatusElements = new Map<string, HTMLElement>();
@@ -222,6 +224,42 @@ function createMetadataInput(
   return cell;
 }
 
+function updateFocusedExportRow(): void {
+  for (const row of exportRows.querySelectorAll<HTMLElement>(
+    ".export-grid.table-row"
+  )) {
+    const isFocused = row.dataset.exportNodeId === focusedExportNodeId;
+    row.classList.toggle("is-focused", isFocused);
+    if (isFocused) {
+      row.setAttribute("aria-current", "true");
+    } else {
+      row.removeAttribute("aria-current");
+    }
+  }
+}
+
+function focusExportNode(node: NodeReference): void {
+  if (isExporting || pendingExportFocusId !== null) {
+    return;
+  }
+  focusedExportNodeId = node.id;
+  pendingExportFocusId = node.id;
+  updateFocusedExportRow();
+  setStatus(
+    exportStatus,
+    `Focusing ${node.name} on the Figma canvas…`,
+    "neutral"
+  );
+  postToPlugin({ type: "focus-node", id: node.id });
+}
+
+function isInteractiveExportRowTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof Element &&
+    target.closest("input, button, select, textarea, label, a") !== null
+  );
+}
+
 function renderExportRows(): void {
   exportRows.replaceChildren();
   rowStatusElements.clear();
@@ -237,9 +275,19 @@ function renderExportRows(): void {
   for (const node of displayedNodes) {
     const index = originalIndex.get(node.id) ?? 0;
     const row = document.createElement("div");
-    row.className = `data-grid export-grid table-row${isUx ? " is-ux" : ""}`;
+    const isFocused = node.id === focusedExportNodeId;
+    row.className = `data-grid export-grid table-row${isUx ? " is-ux" : ""}${isFocused ? " is-focused" : ""}`;
     row.setAttribute("role", "row");
     row.dataset.exportNodeId = node.id;
+    row.tabIndex = 0;
+    row.title = `Focus ${node.name} on the Figma canvas`;
+    row.setAttribute(
+      "aria-label",
+      `${node.name}, row ${index + 1}. Press Enter to focus this node on the Figma canvas.`
+    );
+    if (isFocused) {
+      row.setAttribute("aria-current", "true");
+    }
 
     const checkCell = document.createElement("span");
     checkCell.className = "sticky-check";
@@ -311,6 +359,17 @@ function renderExportRows(): void {
         createMetadataInput(node, "uxScenario", "Required UX scenario")
       );
     }
+    row.addEventListener("click", (event) => {
+      if (!isInteractiveExportRowTarget(event.target)) {
+        focusExportNode(node);
+      }
+    });
+    row.addEventListener("keydown", (event) => {
+      if (event.target === row && event.key === "Enter") {
+        event.preventDefault();
+        focusExportNode(node);
+      }
+    });
     exportRows.append(row);
   }
   updateSortControl();
@@ -321,6 +380,8 @@ function invalidateExportRows(): void {
   resolvedState = invalidateResolvedRows(resolvedState);
   nameSort = "original";
   activeBatchId = null;
+  focusedExportNodeId = null;
+  pendingExportFocusId = null;
   rowStatuses.clear();
   nameWarnings.clear();
   exportRows.replaceChildren();
@@ -524,8 +585,8 @@ for (const input of exportTypeInputs) {
     setStatus(
       exportStatus,
       exportType === "Component page"
-        ? "Category and State are required for checked rows."
-        : "UX Scenario is required; Category and State are optional.",
+        ? "Category and State are required for checked rows. Click a row to focus its node on the canvas."
+        : "UX Scenario is required; Category and State are optional. Click a row to focus its node on the canvas.",
       "neutral"
     );
   });
@@ -697,8 +758,8 @@ window.addEventListener("message", (event: MessageEvent<unknown>) => {
       setStatus(
         exportStatus,
         exportType === "Component page"
-          ? "Category and State are required for checked rows."
-          : "UX Scenario is required; Category and State are optional.",
+          ? "Category and State are required for checked rows. Click a row to focus its node on the canvas."
+          : "UX Scenario is required; Category and State are optional. Click a row to focus its node on the canvas.",
         "neutral"
       );
       break;
@@ -708,6 +769,34 @@ window.addEventListener("message", (event: MessageEvent<unknown>) => {
       setStatus(
         exportResolveStatus,
         `Confirm failed: ${message.message}`,
+        "error"
+      );
+      break;
+    case "focus-node-success": {
+      if (message.id !== pendingExportFocusId) {
+        break;
+      }
+      pendingExportFocusId = null;
+      const node = resolvedState.nodes.find(
+        (candidate) => candidate.id === message.id
+      );
+      setStatus(
+        exportStatus,
+        `Viewing ${node?.name ?? message.id} on “${message.pageName}”. Continue filling the checked row values.`,
+        "success"
+      );
+      break;
+    }
+    case "focus-node-error":
+      if (message.id !== pendingExportFocusId) {
+        break;
+      }
+      pendingExportFocusId = null;
+      focusedExportNodeId = null;
+      updateFocusedExportRow();
+      setStatus(
+        exportStatus,
+        `Could not focus this export node: ${message.message}`,
         "error"
       );
       break;
