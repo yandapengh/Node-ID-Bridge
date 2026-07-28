@@ -1,0 +1,1227 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Node ID Bridge</title>
+    <style>
+      :root {
+  color-scheme: light dark;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 12px;
+  color: var(--figma-color-text, #1e1e1e);
+  background: var(--figma-color-bg, #ffffff);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--figma-color-text, #1e1e1e);
+  background: var(--figma-color-bg, #ffffff);
+}
+
+button,
+textarea,
+input {
+  font: inherit;
+}
+
+button:focus-visible,
+textarea:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--figma-color-border-selected, #0d99ff);
+  outline-offset: 2px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.plugin-shell {
+  padding: 14px 16px 18px;
+}
+
+.plugin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 22px;
+}
+
+h2 {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.plugin-header p,
+.export-title-row p {
+  margin-top: 2px;
+  color: var(--figma-color-text-secondary, #6b6b6b);
+  line-height: 16px;
+}
+
+.primary-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 7px;
+  background: var(--figma-color-bg-secondary, #f2f2f2);
+}
+
+.primary-tab {
+  min-height: 34px;
+  border: 0;
+  border-radius: 5px;
+  padding: 6px 8px;
+  color: var(--figma-color-text-secondary, #6b6b6b);
+  background: transparent;
+  cursor: pointer;
+  font-weight: 550;
+}
+
+.primary-tab.is-active {
+  color: var(--figma-color-text, #1e1e1e);
+  background: var(--figma-color-bg, #ffffff);
+  box-shadow: 0 0 0 1px var(--figma-color-border, #e6e6e6);
+  font-weight: 650;
+}
+
+.section {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--figma-color-border, #e6e6e6);
+}
+
+.section:last-child {
+  border-bottom: 0;
+}
+
+.section-heading,
+.export-title-row,
+.table-toolbar,
+.parsed-action-row,
+.navigation-buttons,
+.button-row,
+.modal-actions {
+  display: flex;
+  align-items: center;
+}
+
+.section-heading,
+.export-title-row,
+.table-toolbar {
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+
+.button {
+  min-height: 30px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-weight: 550;
+}
+
+.button-primary {
+  color: var(--figma-color-text-onbrand, #ffffff);
+  background: var(--figma-color-bg-brand, #0d99ff);
+}
+
+.button-primary:hover:not(:disabled) {
+  background: var(--figma-color-bg-brand-hover, #007be5);
+}
+
+.button-secondary {
+  color: var(--figma-color-text, #1e1e1e);
+  border-color: var(--figma-color-border-strong, #b3b3b3);
+  background: var(--figma-color-bg, #ffffff);
+}
+
+.button-secondary:hover:not(:disabled) {
+  background: var(--figma-color-bg-hover, #f5f5f5);
+}
+
+.button:disabled,
+.view-switch button:disabled {
+  color: var(--figma-color-text-disabled, #b3b3b3);
+  border-color: transparent;
+  background: var(--figma-color-bg-disabled, #f5f5f5);
+  cursor: not-allowed;
+}
+
+.button-icon {
+  width: 30px;
+  min-width: 30px;
+  padding: 4px;
+  font-size: 14px;
+}
+
+.full-width {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.view-switch {
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 2px;
+  border-radius: 5px;
+  background: var(--figma-color-bg-secondary, #f2f2f2);
+}
+
+.view-switch button {
+  min-width: 66px;
+  min-height: 26px;
+  border: 0;
+  border-radius: 3px;
+  padding: 4px 8px;
+  color: var(--figma-color-text-secondary, #6b6b6b);
+  background: transparent;
+  cursor: pointer;
+}
+
+.view-switch button.is-active {
+  color: var(--figma-color-text, #1e1e1e);
+  background: var(--figma-color-bg, #ffffff);
+  box-shadow: 0 0 0 1px var(--figma-color-border, #e6e6e6);
+  font-weight: 600;
+}
+
+.table-scroll {
+  position: relative;
+  overflow: auto;
+  border: 1px solid var(--figma-color-border, #e6e6e6);
+  border-radius: 5px;
+  background: var(--figma-color-bg-secondary, #f7f7f7);
+}
+
+.selection-table {
+  min-height: 72px;
+  max-height: 164px;
+}
+
+.identity-table {
+  max-height: 238px;
+}
+
+.export-table {
+  max-height: 430px;
+}
+
+.empty-state {
+  display: grid;
+  min-height: 70px;
+  place-items: center;
+  padding: 14px;
+  color: var(--figma-color-text-secondary, #6b6b6b);
+  text-align: center;
+  line-height: 17px;
+}
+
+.data-grid {
+  display: grid;
+  align-items: stretch;
+  min-height: 34px;
+}
+
+.selection-grid {
+  grid-template-columns: 42px 150px 176px 100px;
+  min-width: 468px;
+}
+
+.identity-grid {
+  grid-template-columns: 40px 42px 150px 176px 100px;
+  min-width: 508px;
+}
+
+.export-grid {
+  grid-template-columns: 40px 42px 150px 176px 100px 150px 150px;
+  min-width: 808px;
+}
+
+.export-grid.is-ux {
+  grid-template-columns: 40px 42px 150px 176px 100px 150px 150px 190px;
+  min-width: 998px;
+}
+
+.data-grid > * {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  padding: 6px 8px;
+  border-right: 1px solid var(--figma-color-border, #e6e6e6);
+}
+
+.data-grid > *:last-child {
+  border-right: 0;
+}
+
+.table-header {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  min-height: 30px;
+  color: var(--figma-color-text-secondary, #6b6b6b);
+  border-bottom: 1px solid var(--figma-color-border, #e6e6e6);
+  background: var(--figma-color-bg-secondary, #f7f7f7);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.table-row {
+  border-bottom: 1px solid var(--figma-color-border, #e6e6e6);
+  background: var(--figma-color-bg-secondary, #f7f7f7);
+  cursor: default;
+}
+
+.table-row:last-child {
+  border-bottom: 0;
+}
+
+.identity-grid.table-row {
+  cursor: pointer;
+}
+
+.table-row:hover,
+.table-row.is-focused {
+  background: var(--figma-color-bg-hover, #ededed);
+}
+
+.table-row.is-focused {
+  box-shadow: inset 3px 0 0 var(--figma-color-border-selected, #0d99ff);
+}
+
+.sticky-check,
+.sticky-index,
+.sticky-name {
+  position: sticky;
+  z-index: 3;
+  background: inherit;
+}
+
+.table-header .sticky-check,
+.table-header .sticky-index,
+.table-header .sticky-name {
+  z-index: 8;
+}
+
+.sticky-check {
+  left: 0;
+  justify-content: center;
+}
+
+.sticky-index {
+  left: 40px;
+  justify-content: flex-end;
+  color: var(--figma-color-text-secondary, #6b6b6b);
+}
+
+.sticky-name {
+  left: 82px;
+  box-shadow: 1px 0 0 var(--figma-color-border, #e6e6e6);
+}
+
+.selection-grid .sticky-index {
+  left: 0;
+}
+
+.selection-grid .sticky-name {
+  left: 42px;
+}
+
+.data-grid input[type="checkbox"],
+.checkbox-row input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--figma-color-bg-brand, #0d99ff);
+}
+
+.cell-text,
+.node-name,
+.node-id,
+.node-type {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.node-name {
+  font-weight: 550;
+}
+
+.node-id,
+textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.node-id,
+.node-type {
+  color: var(--figma-color-text-secondary, #6b6b6b);
+  font-size: 11px;
+}
+
+.copy-controls {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.checkbox-row {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+
+.format-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.format-fieldset legend,
+.input-label {
+  margin-bottom: 5px;
+  color: var(--figma-color-text-secondary, #6b6b6b);
+  font-size: 11px;
+}
+
+.segmented-control {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 5px;
+  background: var(--figma-color-bg-secondary, #f2f2f2);
+}
+
+.segmented-control label {
+  position: relative;
+  cursor: pointer;
+}
+
+.segmented-control input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.segmented-control span {
+  display: block;
+  min-width: 68px;
+  padding: 5px 10px;
+  border-radius: 3px;
+  text-align: center;
+}
+
+.segmented-control input:checked + span {
+  color: var(--figma-color-text, #1e1e1e);
+  background: var(--figma-color-bg, #ffffff);
+  box-shadow: 0 0 0 1px var(--figma-color-border, #e6e6e6);
+  font-weight: 600;
+}
+
+.input-label {
+  display: block;
+}
+
+textarea {
+  display: block;
+  width: 100%;
+  min-height: 92px;
+  resize: vertical;
+  border: 1px solid var(--figma-color-border-strong, #b3b3b3);
+  border-radius: 5px;
+  padding: 8px;
+  color: var(--figma-color-text, #1e1e1e);
+  background: var(--figma-color-bg, #ffffff);
+  line-height: 17px;
+}
+
+textarea::placeholder,
+input::placeholder {
+  color: var(--figma-color-text-tertiary, #999999);
+}
+
+textarea:disabled,
+input:disabled {
+  color: var(--figma-color-text-disabled, #b3b3b3);
+  background: var(--figma-color-bg-disabled, #f5f5f5);
+}
+
+.status {
+  min-height: 18px;
+  margin-top: 7px;
+  color: var(--figma-color-text-secondary, #6b6b6b);
+  line-height: 16px;
+}
+
+.status[data-tone="success"] {
+  color: var(--figma-color-text-success, #16875d);
+}
+
+.status[data-tone="error"] {
+  color: var(--figma-color-text-danger, #d73a49);
+}
+
+.button-row {
+  gap: 8px;
+  margin-top: 9px;
+}
+
+.button-row .button-primary {
+  flex: 1;
+}
+
+.table-toolbar {
+  min-height: 30px;
+}
+
+.checked-count {
+  color: var(--figma-color-text-secondary, #6b6b6b);
+  font-size: 11px;
+}
+
+.navigation-buttons,
+.parsed-action-row {
+  gap: 6px;
+}
+
+.parsed-action-row {
+  justify-content: flex-end;
+  margin-top: 9px;
+}
+
+.parsed-action-row .button {
+  min-width: 86px;
+}
+
+.export-section {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.export-title-row {
+  align-items: flex-start;
+}
+
+.export-title-row > div:first-child {
+  min-width: 0;
+}
+
+.export-title-row p {
+  max-width: 250px;
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.export-type-fieldset {
+  margin-bottom: 12px;
+}
+
+.export-type-control {
+  display: flex;
+}
+
+.export-type-control label {
+  flex: 1;
+}
+
+.export-type-control span {
+  min-width: 0;
+}
+
+.bulk-control {
+  position: relative;
+}
+
+.field-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 140px;
+  overflow: hidden;
+  border: 1px solid var(--figma-color-border, #e6e6e6);
+  border-radius: 5px;
+  background: var(--figma-color-bg, #ffffff);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 16%);
+}
+
+.field-menu button {
+  display: block;
+  width: 100%;
+  min-height: 30px;
+  border: 0;
+  padding: 6px 10px;
+  color: var(--figma-color-text, #1e1e1e);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.field-menu button:hover,
+.field-menu button:focus {
+  background: var(--figma-color-bg-hover, #f5f5f5);
+}
+
+.sortable-header {
+  border: 0;
+  color: inherit;
+  background: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  text-transform: inherit;
+}
+
+.sortable-header span {
+  margin-left: 4px;
+  font-size: 11px;
+}
+
+.export-cell-input {
+  width: 100%;
+  min-width: 0;
+  height: 27px;
+  border: 1px solid var(--figma-color-border-strong, #b3b3b3);
+  border-radius: 4px;
+  padding: 4px 6px;
+  color: var(--figma-color-text, #1e1e1e);
+  background: var(--figma-color-bg, #ffffff);
+}
+
+.export-cell-input.is-invalid {
+  border-color: var(--figma-color-border-danger, #d73a49);
+  box-shadow: 0 0 0 1px var(--figma-color-border-danger, #d73a49);
+}
+
+.export-identity {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.row-item-status {
+  width: 100%;
+  overflow: hidden;
+  color: var(--figma-color-text-secondary, #6b6b6b);
+  font-size: 9px;
+  line-height: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-item-status[data-tone="success"] {
+  color: var(--figma-color-text-success, #16875d);
+}
+
+.row-item-status[data-tone="error"] {
+  color: var(--figma-color-text-danger, #d73a49);
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(0 0 0 / 38%);
+}
+
+.modal {
+  width: min(360px, 100%);
+  border: 1px solid var(--figma-color-border, #e6e6e6);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--figma-color-bg, #ffffff);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 24%);
+}
+
+.modal p {
+  margin: 4px 0 12px;
+  color: var(--figma-color-text-secondary, #6b6b6b);
+  line-height: 17px;
+}
+
+.modal input {
+  width: 100%;
+  height: 32px;
+  border: 1px solid var(--figma-color-border-strong, #b3b3b3);
+  border-radius: 5px;
+  padding: 5px 8px;
+  color: var(--figma-color-text, #1e1e1e);
+  background: var(--figma-color-bg, #ffffff);
+}
+
+.modal-actions {
+  justify-content: flex-end;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .primary-tab,
+  .view-switch button,
+  .button {
+    transition:
+      background-color 100ms ease,
+      color 100ms ease;
+  }
+}
+
+    </style>
+  </head>
+  <body>
+    <main class="plugin-shell">
+      <header class="plugin-header">
+        <div>
+          <h1>Node ID Bridge</h1>
+          <p>Bridge selections, node IDs, and annotated PNG batches.</p>
+        </div>
+      </header>
+
+      <nav class="primary-tabs" role="tablist" aria-label="Plugin workflow">
+        <button
+          id="selection-tab"
+          class="primary-tab is-active"
+          type="button"
+          role="tab"
+          aria-selected="true"
+          aria-controls="selection-panel"
+        >
+          Selection ↔ IDs
+        </button>
+        <button
+          id="image-export-tab"
+          class="primary-tab"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="image-export-panel"
+        >
+          Selection → Image export
+        </button>
+      </nav>
+
+      <div
+        id="selection-panel"
+        class="tab-panel"
+        role="tabpanel"
+        aria-labelledby="selection-tab"
+      >
+        <section class="section" aria-labelledby="selection-heading">
+          <div class="section-heading">
+            <h2 id="selection-heading">
+              Selection <span aria-hidden="true">→</span> IDs
+            </h2>
+            <button
+              id="read-selection"
+              class="button button-secondary"
+              type="button"
+            >
+              Read current selection
+            </button>
+          </div>
+
+          <div
+            id="selection-preview"
+            class="table-scroll selection-table"
+            aria-live="polite"
+          >
+            <div class="empty-state">
+              Read the current Figma selection to preview node IDs.
+            </div>
+          </div>
+
+          <div class="copy-controls">
+            <label class="checkbox-row">
+              <input id="include-names" type="checkbox" checked />
+              <span>Include node names</span>
+            </label>
+
+            <fieldset class="format-fieldset">
+              <legend>Copy format</legend>
+              <div class="segmented-control">
+                <label>
+                  <input
+                    type="radio"
+                    name="copy-format"
+                    value="compact"
+                    checked
+                  />
+                  <span>Compact</span>
+                </label>
+                <label>
+                  <input type="radio" name="copy-format" value="json" />
+                  <span>JSON</span>
+                </label>
+              </div>
+            </fieldset>
+          </div>
+
+          <button
+            id="copy-selection"
+            class="button button-primary full-width"
+            type="button"
+            disabled
+          >
+            Copy
+          </button>
+          <div
+            id="copy-status"
+            class="status"
+            data-tone="neutral"
+            role="status"
+            aria-live="polite"
+          >
+            Nothing to copy yet.
+          </div>
+        </section>
+
+        <section class="section" aria-labelledby="ids-heading">
+          <div class="section-heading">
+            <h2 id="ids-heading">
+              IDs <span aria-hidden="true">→</span> Selection
+            </h2>
+            <div
+              class="view-switch"
+              role="tablist"
+              aria-label="IDs to Selection view"
+            >
+              <button
+                id="ids-input-tab"
+                type="button"
+                role="tab"
+                class="is-active"
+                aria-selected="true"
+                aria-controls="ids-input-view"
+              >
+                Input
+              </button>
+              <button
+                id="ids-resolved-tab"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="ids-resolved-view"
+                disabled
+              >
+                Resolved
+              </button>
+            </div>
+          </div>
+
+          <div
+            id="ids-input-view"
+            role="tabpanel"
+            aria-labelledby="ids-input-tab"
+          >
+            <label class="input-label" for="node-id-input">
+              Paste node IDs or text containing IDs
+            </label>
+            <textarea
+              id="node-id-input"
+              rows="5"
+              spellcheck="false"
+              placeholder="5309:30855 | Profile Details&#10;5309-27495"
+            ></textarea>
+
+            <div
+              id="parse-status"
+              class="status"
+              data-tone="neutral"
+              role="status"
+              aria-live="polite"
+            >
+              No node IDs found yet.
+            </div>
+
+            <div class="button-row">
+              <button
+                id="select-nodes"
+                class="button button-primary"
+                type="button"
+                disabled
+              >
+                Select nodes
+              </button>
+              <button
+                id="clear-input"
+                class="button button-secondary"
+                type="button"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div
+            id="ids-resolved-view"
+            role="tabpanel"
+            aria-labelledby="ids-resolved-tab"
+            hidden
+          >
+            <div class="table-toolbar">
+              <span id="checked-count" class="checked-count"></span>
+              <div class="navigation-buttons" aria-label="Canvas navigation">
+                <button
+                  id="previous-node"
+                  class="button button-icon button-secondary"
+                  type="button"
+                  aria-label="Focus previous node"
+                  title="Focus previous node"
+                  disabled
+                >
+                  ↑
+                </button>
+                <button
+                  id="next-node"
+                  class="button button-icon button-secondary"
+                  type="button"
+                  aria-label="Focus next node"
+                  title="Focus next node"
+                  disabled
+                >
+                  ↓
+                </button>
+              </div>
+            </div>
+
+            <div
+              id="parsed-selection-preview"
+              class="table-scroll identity-table"
+              role="grid"
+              aria-label="Resolved nodes. Use Up and Down Arrow keys to focus nodes on the canvas."
+              aria-busy="false"
+              tabindex="0"
+            >
+              <div class="data-grid identity-grid table-header" role="row">
+                <span class="sticky-check" role="columnheader">
+                  <input
+                    id="parsed-select-all"
+                    type="checkbox"
+                    aria-label="Select all resolved nodes"
+                  />
+                </span>
+                <span class="sticky-index" role="columnheader">#</span>
+                <span class="sticky-name" role="columnheader">Name</span>
+                <span role="columnheader">Node ID</span>
+                <span role="columnheader">Type</span>
+              </div>
+              <div id="parsed-selection-rows"></div>
+            </div>
+
+            <div class="parsed-action-row">
+              <button
+                id="copy-parsed-selection"
+                class="button button-secondary"
+                type="button"
+                disabled
+              >
+                Copy
+              </button>
+              <button
+                id="apply-selection"
+                class="button button-primary"
+                type="button"
+                disabled
+              >
+                Apply
+              </button>
+            </div>
+            <div
+              id="selection-action-status"
+              class="status"
+              data-tone="neutral"
+              role="status"
+              aria-live="polite"
+            ></div>
+          </div>
+        </section>
+      </div>
+
+      <div
+        id="image-export-panel"
+        class="tab-panel"
+        role="tabpanel"
+        aria-labelledby="image-export-tab"
+        hidden
+      >
+        <section class="section export-section" aria-labelledby="export-heading">
+          <div class="export-title-row">
+            <div>
+              <h2 id="export-heading">Selection → Image export</h2>
+              <p>Resolve IDs without changing the canvas · PNG 1x · atomic ZIP</p>
+            </div>
+            <div
+              class="view-switch"
+              role="tablist"
+              aria-label="Image export view"
+            >
+              <button
+                id="export-input-tab"
+                type="button"
+                role="tab"
+                class="is-active"
+                aria-selected="true"
+                aria-controls="export-input-view"
+              >
+                Input
+              </button>
+              <button
+                id="export-resolved-tab"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="export-resolved-view"
+                disabled
+              >
+                Resolved
+              </button>
+            </div>
+          </div>
+
+          <fieldset class="format-fieldset export-type-fieldset">
+            <legend>Export type</legend>
+            <div class="segmented-control export-type-control">
+              <label>
+                <input
+                  type="radio"
+                  name="export-type"
+                  value="Component page"
+                  checked
+                />
+                <span>Component page</span>
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="export-type"
+                  value="UX Key page"
+                />
+                <span>UX Key page</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div
+            id="export-input-view"
+            role="tabpanel"
+            aria-labelledby="export-input-tab"
+          >
+            <label class="input-label" for="export-node-id-input">
+              Paste node IDs or text containing IDs
+            </label>
+            <textarea
+              id="export-node-id-input"
+              rows="7"
+              spellcheck="false"
+              placeholder="5392:134853 | Home Page&#10;I6003:47907;6003:40969"
+            ></textarea>
+            <div
+              id="export-resolve-status"
+              class="status"
+              data-tone="neutral"
+              role="status"
+              aria-live="polite"
+            >
+              No node IDs found yet.
+            </div>
+            <div class="button-row">
+              <button
+                id="confirm-export-nodes"
+                class="button button-primary"
+                type="button"
+                disabled
+              >
+                Confirm
+              </button>
+              <button
+                id="clear-export-input"
+                class="button button-secondary"
+                type="button"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div
+            id="export-resolved-view"
+            role="tabpanel"
+            aria-labelledby="export-resolved-tab"
+            hidden
+          >
+            <div class="table-toolbar">
+              <span id="export-checked-count" class="checked-count"></span>
+              <div class="bulk-control">
+                <button
+                  id="bulk-write"
+                  class="button button-secondary"
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded="false"
+                >
+                  批量写入
+                </button>
+                <div
+                  id="bulk-field-menu"
+                  class="field-menu"
+                  role="menu"
+                  hidden
+                >
+                  <button type="button" role="menuitem" data-bulk-field="category">
+                    Category
+                  </button>
+                  <button type="button" role="menuitem" data-bulk-field="state">
+                    State
+                  </button>
+                  <button
+                    id="bulk-ux-scenario"
+                    type="button"
+                    role="menuitem"
+                    data-bulk-field="uxScenario"
+                    hidden
+                  >
+                    UX Scenario
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div
+              id="export-table"
+              class="table-scroll export-table"
+              role="grid"
+              aria-label="Confirmed image export nodes and metadata"
+              aria-busy="false"
+            >
+              <div
+                id="export-table-header"
+                class="data-grid export-grid table-header"
+                role="row"
+              >
+                <span class="sticky-check" role="columnheader">
+                  <input
+                    id="export-select-all"
+                    type="checkbox"
+                    aria-label="Select all export rows"
+                  />
+                </span>
+                <span class="sticky-index" role="columnheader">#</span>
+                <button
+                  id="sort-export-name"
+                  class="sticky-name sortable-header"
+                  type="button"
+                  role="columnheader"
+                  aria-label="Sort Name, currently original order"
+                >
+                  Name <span id="sort-export-name-indicator">↕</span>
+                </button>
+                <span role="columnheader">Node ID</span>
+                <span role="columnheader">Type</span>
+                <span role="columnheader">Category</span>
+                <span role="columnheader">State</span>
+                <span
+                  id="ux-scenario-heading"
+                  role="columnheader"
+                  hidden
+                >
+                  UX Scenario
+                </span>
+              </div>
+              <div id="export-rows"></div>
+            </div>
+
+            <button
+              id="export-images"
+              class="button button-primary full-width"
+              type="button"
+              disabled
+            >
+              Export PNG 1x + ZIP
+            </button>
+            <div
+              id="export-status"
+              class="status"
+              data-tone="neutral"
+              role="status"
+              aria-live="polite"
+            >
+              Confirm node IDs before exporting.
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <div
+      id="bulk-modal"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bulk-modal-title"
+      hidden
+    >
+      <div class="modal">
+        <h2 id="bulk-modal-title">批量写入</h2>
+        <p id="bulk-modal-description"></p>
+        <label class="input-label" for="bulk-modal-input">Value</label>
+        <input id="bulk-modal-input" type="text" autocomplete="off" />
+        <div class="modal-actions">
+          <button
+            id="bulk-modal-cancel"
+            class="button button-secondary"
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            id="bulk-modal-confirm"
+            class="button button-primary"
+            type="button"
+            disabled
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (()=>{var An=Object.defineProperty,zn=Object.defineProperties;var Dn=Object.getOwnPropertyDescriptors;var Kt=Object.getOwnPropertySymbols;var Hn=Object.prototype.hasOwnProperty,Bn=Object.prototype.propertyIsEnumerable;var Wt=(e,t,n)=>t in e?An(e,t,{enumerable:!0,configurable:!0,writable:!0,value:n}):e[t]=n,Y=(e,t)=>{for(var n in t||(t={}))Hn.call(t,n)&&Wt(e,n,t[n]);if(Kt)for(var n of Kt(t))Bn.call(t,n)&&Wt(e,n,t[n]);return e},Q=(e,t)=>zn(e,Dn(t));var Fn=/I\d+[:-]\d+(?:;\d+[:-]\d+)+|\d+[:-]\d+/g;function xe(e){var r;let t=(r=e.match(Fn))!=null?r:[],n=new Set;for(let o of t)n.add(o.replace(/-/g,":"));return[...n]}function gt(e,t){if(e.length===0)return"";if(t.format==="compact")return e.map(r=>t.includeNames?`${r.id} | ${r.name}`:r.id).join(`
+`);let n=e.map(r=>t.includeNames?{id:r.id,name:r.name}:r.id);return JSON.stringify(n.length===1?n[0]:n)}function Le(){return{view:"input",resolvedInput:null,nodes:[],checkedNodeIds:new Set}}function Ze(e,t,n){return{view:n?"resolved":"input",resolvedInput:e,nodes:[...t],checkedNodeIds:new Set(t.map(r=>r.id))}}function Ge(e,t){return t==="resolved"&&e.nodes.length===0?e:Q(Y({},e),{view:t})}function Xe(e){return e.nodes.length===0&&e.resolvedInput===null&&e.view==="input"?e:Le()}function ae(e,t){let n=e.reduce((r,o)=>r+Number(t.has(o.id)),0);return{checked:e.length>0&&n===e.length,indeterminate:n>0&&n<e.length,selectedCount:n}}function je(e,t){return t?new Set(e.map(n=>n.id)):new Set}function Yt(e){return e==="original"?"ascending":e==="ascending"?"descending":"original"}function Qt(e,t){if(t==="original")return[...e];let n=new Map(e.map((o,i)=>[o.id,i])),r=t==="ascending"?1:-1;return[...e].sort((o,i)=>{var s,c;let a=o.name.localeCompare(i.name,void 0,{sensitivity:"base",numeric:!0});return a!==0?a*r:((s=n.get(o.id))!=null?s:0)-((c=n.get(i.id))!=null?c:0)})}function Ke(){return{category:"",state:"",uxScenario:""}}function _t(e,t,n,r,o){var a;let i=new Map(e);for(let s of t){if(!n.has(s.id))continue;let c=(a=i.get(s.id))!=null?a:Ke();i.set(s.id,Q(Y({},c),{[r]:o}))}return i}function Jt(e,t){var n;return(n=e.get(t))!=null?n:Ke()}function mt(e,t,n,r){return{ok:!1,reason:"required-field",originalIndex:e,nodeId:t,field:n,label:r}}function en(e,t,n,r){let o=t.map((a,s)=>({node:a,originalIndex:s})).filter(({node:a})=>n.has(a.id));if(o.length===0)return{ok:!1,reason:"no-selection"};if(e==="Component page"){let a=[];for(let{node:s,originalIndex:c}of o){let u=Jt(r,s.id),l=u.category.trim(),f=u.state.trim();if(l.length===0)return mt(c,s.id,"category","Category");if(f.length===0)return mt(c,s.id,"state","State");a.push({nodeId:s.id,name:s.name,category:l,state:f})}return{ok:!0,request:{type:"export-images",exportType:e,records:a}}}let i=[];for(let{node:a,originalIndex:s}of o){let c=Jt(r,a.id),u=c.uxScenario.trim();if(u.length===0)return mt(s,a.id,"uxScenario","UX Scenario");let l=c.category.trim(),f=c.state.trim(),v={nodeId:a.id,name:a.name,uxScenario:u};l.length>0&&(v.category=l),f.length>0&&(v.state=f),i.push(v)}return{ok:!0,request:{type:"export-images",exportType:e,records:i}}}function d(e){let t=document.getElementById(e);if(t===null)throw new Error(`Missing UI element: ${e}`);return t}function p(e,t,n){e.textContent=t,e.dataset.tone=n}function se(e){parent.postMessage({pluginMessage:e},"*")}function We(e){if(typeof e!="object"||e===null)return null;let t=e;return typeof t.pluginMessage!="object"||t.pluginMessage===null?null:t.pluginMessage}async function yt(e){var r;if(((r=navigator.clipboard)==null?void 0:r.writeText)!==void 0)try{await navigator.clipboard.writeText(e);return}catch(o){}let t=document.createElement("textarea");t.value=e,t.setAttribute("readonly",""),t.style.position="fixed",t.style.opacity="0",t.style.pointerEvents="none",document.body.append(t),t.select(),t.setSelectionRange(0,t.value.length);let n=document.execCommand("copy");if(t.remove(),!n)throw new Error("Clipboard access was denied.")}var L=Uint8Array,F=Uint16Array,bt=Int32Array,It=new L([0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0,0,0,0]),Tt=new L([0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13,0,0]),tn=new L([16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15]),ln=function(e,t){for(var n=new F(31),r=0;r<31;++r)n[r]=t+=1<<e[r-1];for(var o=new bt(n[30]),r=1;r<30;++r)for(var i=n[r];i<n[r+1];++i)o[i]=i-n[r]<<5|r;return{b:n,r:o}},cn=ln(It,2),Pn=cn.b,wt=cn.r;Pn[28]=258,wt[258]=28;var un=ln(Tt,0),Ar=un.b,nn=un.r,Et=new F(32768);for(m=0;m<32768;++m)ee=(m&43690)>>1|(m&21845)<<1,ee=(ee&52428)>>2|(ee&13107)<<2,ee=(ee&61680)>>4|(ee&3855)<<4,Et[m]=((ee&65280)>>8|(ee&255)<<8)>>1;var ee,m,Ae=(function(e,t,n){for(var r=e.length,o=0,i=new F(t);o<r;++o)e[o]&&++i[e[o]-1];var a=new F(t);for(o=1;o<t;++o)a[o]=a[o-1]+i[o-1]<<1;var s;if(n){s=new F(1<<t);var c=15-t;for(o=0;o<r;++o)if(e[o])for(var u=o<<4|e[o],l=t-e[o],f=a[e[o]-1]++<<l,v=f|(1<<l)-1;f<=v;++f)s[Et[f]>>c]=u}else for(s=new F(r),o=0;o<r;++o)e[o]&&(s[o]=Et[a[e[o]-1]++]>>15-e[o]);return s}),de=new L(288);for(m=0;m<144;++m)de[m]=8;var m;for(m=144;m<256;++m)de[m]=9;var m;for(m=256;m<280;++m)de[m]=7;var m;for(m=280;m<288;++m)de[m]=8;var m,Je=new L(32);for(m=0;m<32;++m)Je[m]=5;var m,Un=Ae(de,9,0);var qn=Ae(Je,5,0);var dn=function(e){return(e+7)/8|0},fn=function(e,t,n){return(t==null||t<0)&&(t=0),(n==null||n>e.length)&&(n=e.length),new L(e.subarray(t,n))};var On=["unexpected EOF","invalid block type","invalid length/literal","invalid distance","stream finished","no stream handler",,"no callback","invalid UTF-8 data","extra field too long","date not in range 1980-2099","filename too long","stream finishing","invalid zip data"],Qe=function(e,t,n){var r=new Error(t||On[e]);if(r.code=e,Error.captureStackTrace&&Error.captureStackTrace(r,Qe),!n)throw r;return r};var te=function(e,t,n){n<<=t&7;var r=t/8|0;e[r]|=n,e[r+1]|=n>>8},Re=function(e,t,n){n<<=t&7;var r=t/8|0;e[r]|=n,e[r+1]|=n>>8,e[r+2]|=n>>16},xt=function(e,t){for(var n=[],r=0;r<e.length;++r)e[r]&&n.push({s:r,f:e[r]});var o=n.length,i=n.slice();if(!o)return{t:hn,l:0};if(o==1){var a=new L(n[0].s+1);return a[n[0].s]=1,{t:a,l:1}}n.sort(function(z,D){return z.f-D.f}),n.push({s:-1,f:25001});var s=n[0],c=n[1],u=0,l=1,f=2;for(n[0]={s:-1,f:s.f+c.f,l:s,r:c};l!=o-1;)s=n[n[u].f<n[f].f?u++:f++],c=n[u!=l&&n[u].f<n[f].f?u++:f++],n[l++]={s:-1,f:s.f+c.f,l:s,r:c};for(var v=i[0].s,r=1;r<o;++r)i[r].s>v&&(v=i[r].s);var E=new F(v+1),k=kt(n[l-1],E,0);if(k>t){var r=0,w=0,S=k-t,R=1<<S;for(i.sort(function(D,b){return E[b.s]-E[D.s]||D.f-b.f});r<o;++r){var I=i[r].s;if(E[I]>t)w+=R-(1<<k-E[I]),E[I]=t;else break}for(w>>=S;w>0;){var j=i[r].s;E[j]<t?w-=1<<t-E[j]++-1:++r}for(;r>=0&&w;--r){var T=i[r].s;E[T]==t&&(--E[T],++w)}k=t}return{t:new L(E),l:k}},kt=function(e,t,n){return e.s==-1?Math.max(kt(e.l,t,n+1),kt(e.r,t,n+1)):t[e.s]=n},rn=function(e){for(var t=e.length;t&&!e[--t];);for(var n=new F(++t),r=0,o=e[0],i=1,a=function(c){n[r++]=c},s=1;s<=t;++s)if(e[s]==o&&s!=t)++i;else{if(!o&&i>2){for(;i>138;i-=138)a(32754);i>2&&(a(i>10?i-11<<5|28690:i-3<<5|12305),i=0)}else if(i>3){for(a(o),--i;i>6;i-=6)a(8304);i>2&&(a(i-3<<5|8208),i=0)}for(;i--;)a(o);i=1,o=e[s]}return{c:n.subarray(0,r),n:t}},$e=function(e,t){for(var n=0,r=0;r<t.length;++r)n+=e[r]*t[r];return n},pn=function(e,t,n){var r=n.length,o=dn(t+2);e[o]=r&255,e[o+1]=r>>8,e[o+2]=e[o]^255,e[o+3]=e[o+1]^255;for(var i=0;i<r;++i)e[o+i+4]=n[i];return(o+4+r)*8},on=function(e,t,n,r,o,i,a,s,c,u,l){te(t,l++,n),++o[256];for(var f=xt(o,15),v=f.t,E=f.l,k=xt(i,15),w=k.t,S=k.l,R=rn(v),I=R.c,j=R.n,T=rn(w),z=T.c,D=T.n,b=new F(19),y=0;y<I.length;++y)++b[I[y]&31];for(var y=0;y<z.length;++y)++b[z[y]&31];for(var h=xt(b,7),H=h.t,ve=h.l,B=19;B>4&&!H[tn[B-1]];--B);var ge=u+5<<3,O=$e(o,de)+$e(i,Je)+a,V=$e(o,v)+$e(i,w)+a+14+3*B+$e(b,H)+2*b[16]+3*b[17]+7*b[18];if(c>=0&&ge<=O&&ge<=V)return pn(t,l,e.subarray(c,c+u));var K,M,Z,ie;if(te(t,l,1+(V<O)),l+=2,V<O){K=Ae(v,E,0),M=v,Z=Ae(w,S,0),ie=w;var ft=Ae(H,ve,0);te(t,l,j-257),te(t,l+5,D-1),te(t,l+10,B-4),l+=14;for(var y=0;y<B;++y)te(t,l+3*y,H[tn[y]]);l+=3*B;for(var W=[I,z],Ce=0;Ce<2;++Ce)for(var me=W[Ce],y=0;y<me.length;++y){var J=me[y]&31;te(t,l,ft[J]),l+=H[J],J>15&&(te(t,l,me[y]>>5&127),l+=me[y]>>12)}}else K=Un,M=de,Z=qn,ie=Je;for(var y=0;y<s;++y){var C=r[y];if(C>255){var J=C>>18&31;Re(t,l,K[J+257]),l+=M[J+257],J>7&&(te(t,l,C>>23&31),l+=It[J]);var ye=C&31;Re(t,l,Z[ye]),l+=ie[ye],ye>3&&(Re(t,l,C>>5&8191),l+=Tt[ye])}else Re(t,l,K[C]),l+=M[C]}return Re(t,l,K[256]),l+M[256]},Vn=new bt([65540,131080,131088,131104,262176,1048704,1048832,2114560,2117632]),hn=new L(0),Zn=function(e,t,n,r,o,i){var a=i.z||e.length,s=new L(r+a+5*(1+Math.ceil(a/7e3))+o),c=s.subarray(r,s.length-o),u=i.l,l=(i.r||0)&7;if(t){l&&(c[0]=i.r>>3);for(var f=Vn[t-1],v=f>>13,E=f&8191,k=(1<<n)-1,w=i.p||new F(32768),S=i.h||new F(k+1),R=Math.ceil(n/3),I=2*R,j=function(vt){return(e[vt]^e[vt+1]<<R^e[vt+2]<<I)&k},T=new bt(25e3),z=new F(288),D=new F(32),b=0,y=0,h=i.i||0,H=0,ve=i.w||0,B=0;h+2<a;++h){var ge=j(h),O=h&32767,V=S[ge];if(w[O]=V,S[ge]=O,ve<=h){var K=a-h;if((b>7e3||H>24576)&&(K>423||!u)){l=on(e,c,0,T,z,D,y,H,B,h-B,l),H=b=y=0,B=h;for(var M=0;M<286;++M)z[M]=0;for(var M=0;M<30;++M)D[M]=0}var Z=2,ie=0,ft=E,W=O-V&32767;if(K>2&&ge==j(h-W))for(var Ce=Math.min(v,K)-1,me=Math.min(32767,h),J=Math.min(258,K);W<=me&&--ft&&O!=V;){if(e[h+Z]==e[h+Z-W]){for(var C=0;C<J&&e[h+C]==e[h+C-W];++C);if(C>Z){if(Z=C,ie=W,C>Ce)break;for(var ye=Math.min(W,C-2),Zt=0,M=0;M<ye;++M){var pt=h-W+M&32767,$n=w[pt],Gt=pt-$n&32767;Gt>Zt&&(Zt=Gt,V=pt)}}}O=V,V=w[O],W+=O-V&32767}if(ie){T[H++]=268435456|wt[Z]<<18|nn[ie];var Xt=wt[Z]&31,jt=nn[ie]&31;y+=It[Xt]+Tt[jt],++z[257+Xt],++D[jt],ve=h+Z,++b}else T[H++]=e[h],++z[e[h]]}}for(h=Math.max(h,ve);h<a;++h)T[H++]=e[h],++z[e[h]];l=on(e,c,u,T,z,D,y,H,B,h-B,l),u||(i.r=l&7|c[l/8|0]<<3,l-=7,i.h=S,i.p=w,i.i=h,i.w=ve)}else{for(var h=i.w||0;h<a+u;h+=65535){var ht=h+65535;ht>=a&&(c[l/8|0]=u,ht=a),l=pn(c,l+1,e.subarray(h,ht))}i.i=a}return fn(s,0,r+dn(l)+o)},Gn=(function(){for(var e=new Int32Array(256),t=0;t<256;++t){for(var n=t,r=9;--r;)n=(n&1&&-306674912)^n>>>1;e[t]=n}return e})(),Xn=function(){var e=-1;return{p:function(t){for(var n=e,r=0;r<t.length;++r)n=Gn[n&255^t[r]]^n>>>8;e=n},d:function(){return~e}}};var jn=function(e,t,n,r,o){if(!o&&(o={l:1},t.dictionary)){var i=t.dictionary.subarray(-32768),a=new L(i.length+e.length);a.set(i),a.set(e,i.length),e=a,o.w=i.length}return Zn(e,t.level==null?6:t.level,t.mem==null?o.l?Math.ceil(Math.max(8,Math.min(13,Math.log(e.length)))*1.5):20:12+t.mem,n,r,o)},vn=function(e,t){var n={};for(var r in e)n[r]=e[r];for(var r in t)n[r]=t[r];return n};var N=function(e,t,n){for(;n;++t)e[t]=n,n>>>=8};function Kn(e,t){return jn(e,t||{},0,0)}var gn=function(e,t,n,r){for(var o in e){var i=e[o],a=t+o,s=r;Array.isArray(i)&&(s=vn(r,i[1]),i=i[0]),ArrayBuffer.isView(i)?n[a]=[i,s]:(n[a+="/"]=[new L(0),s],gn(i,a,n,r))}},an=typeof TextEncoder!="undefined"&&new TextEncoder,Wn=typeof TextDecoder!="undefined"&&new TextDecoder,Jn=0;try{Wn.decode(hn,{stream:!0}),Jn=1}catch(e){}function Ye(e,t){if(t){for(var n=new L(e.length),r=0;r<e.length;++r)n[r]=e.charCodeAt(r);return n}if(an)return an.encode(e);for(var o=e.length,i=new L(e.length+(e.length>>1)),a=0,s=function(l){i[a++]=l},r=0;r<o;++r){if(a+5>i.length){var c=new L(a+8+(o-r<<1));c.set(i),i=c}var u=e.charCodeAt(r);u<128||t?s(u):u<2048?(s(192|u>>6),s(128|u&63)):u>55295&&u<57344?(u=65536+(u&1047552)|e.charCodeAt(++r)&1023,s(240|u>>18),s(128|u>>12&63),s(128|u>>6&63),s(128|u&63)):(s(224|u>>12),s(128|u>>6&63),s(128|u&63))}return fn(i,0,a)}var St=function(e){var t=0;if(e)for(var n in e){var r=e[n].length;r>65535&&Qe(9),t+=r+4}return t},sn=function(e,t,n,r,o,i,a,s){var c=r.length,u=n.extra,l=s&&s.length,f=St(u);N(e,t,a!=null?33639248:67324752),t+=4,a!=null&&(e[t++]=20,e[t++]=n.os),e[t]=20,t+=2,e[t++]=n.flag<<1|(i<0&&8),e[t++]=o&&8,e[t++]=n.compression&255,e[t++]=n.compression>>8;var v=new Date(n.mtime==null?Date.now():n.mtime),E=v.getFullYear()-1980;if((E<0||E>119)&&Qe(10),N(e,t,E<<25|v.getMonth()+1<<21|v.getDate()<<16|v.getHours()<<11|v.getMinutes()<<5|v.getSeconds()>>1),t+=4,i!=-1&&(N(e,t,n.crc),N(e,t+4,i<0?-i-2:i),N(e,t+8,n.size)),N(e,t+12,c),N(e,t+14,f),t+=16,a!=null&&(N(e,t,l),N(e,t+6,n.attrs),N(e,t+10,a),t+=14),e.set(r,t),t+=c,f)for(var k in u){var w=u[k],S=w.length;N(e,t,+k),N(e,t+2,S),e.set(w,t+4),t+=4+S}return l&&(e.set(s,t),t+=l),t},Yn=function(e,t,n,r,o){N(e,t,101010256),N(e,t+8,n),N(e,t+10,n),N(e,t+12,r),N(e,t+16,o)};function mn(e,t){t||(t={});var n={},r=[];gn(e,"",n,t);var o=0,i=0;for(var a in n){var s=n[a],c=s[0],u=s[1],l=u.level==0?0:8,f=Ye(a),v=f.length,E=u.comment,k=E&&Ye(E),w=k&&k.length,S=St(u.extra);v>65535&&Qe(11);var R=l?Kn(c,u):c,I=R.length,j=Xn();j.p(c),r.push(vn(u,{size:c.length,crc:j.d(),c:R,f,m:k,u:v!=a.length||k&&E.length!=w,o,compression:l})),o+=30+v+S+I,i+=76+2*(v+S)+(w||0)+I}for(var T=new L(i+22),z=o,D=i-o,b=0;b<r.length;++b){var f=r[b];sn(T,f.o,f,f.f,f.u,f.c.length);var y=30+f.f.length+St(f.extra);T.set(f.c,f.o+y),sn(T,o,f,f.f,f.u,f.c.length,f.o,f.m),o+=16+y+(f.m?f.m.length:0)}return Yn(T,o,r.length,D,z),T}var yn={"Component page":{slug:"component-page",directory:"input/Component page"},"UX Key page":{slug:"ux-key-page",directory:"input/UX Key page"}};function Qn(e){return yn[e].slug}function _e(e){return yn[e].directory}function _n(e){return e.toISOString().replace(/[-:.]/g,"")}function xn(e,t){let n=_n(new Date(t));return`${_e(e)}/manifest--${Qn(e)}--${n}.json`}function Mt(e){return`${e}.zip`}function wn(e){let{manifest:t,images:n}=e;if(t.records.length===0||n.length!==t.records.length)throw new Error("The completed export does not contain one PNG per record.");let r={},o=`${_e(t.exportType)}/`;for(let s of t.records){let c=s.imagePath.slice(o.length);if(s.type!==t.exportType||!s.imagePath.startsWith(o)||c.length===0||c.includes("/")||!c.endsWith(".png"))throw new Error(`Manifest image path is outside ${_e(t.exportType)}: ${s.imagePath}.`)}let i=new Set(t.records.map(s=>`${s.nodeId}\0${s.imagePath}`));if(i.size!==t.records.length)throw new Error("The manifest contains duplicate Node ID and image paths.");for(let s of n){let c=`${s.nodeId}\0${s.imagePath}`;if(!i.has(c))throw new Error(`PNG ${s.imagePath} does not match a manifest record.`);if(r[s.imagePath]!==void 0)throw new Error(`Duplicate ZIP entry: ${s.imagePath}.`);r[s.imagePath]=s.bytes}let a=xn(t.exportType,t.exportedAt);return r[a]=Ye(`${JSON.stringify(t,null,2)}
+`),mn(r,{level:6})}var Ct=d("export-input-tab"),tt=d("export-resolved-tab"),er=d("export-input-view"),tr=d("export-resolved-view"),re=d("export-node-id-input"),we=d("export-resolve-status"),kn=d("confirm-export-nodes"),Sn=d("clear-export-input"),nr=d("export-table"),rr=d("export-table-header"),ze=d("export-rows"),Ee=d("export-select-all"),or=d("export-checked-count"),nt=d("sort-export-name"),ir=d("sort-export-name-indicator"),ar=d("ux-scenario-heading"),De=d("bulk-write"),ke=d("bulk-field-menu"),sr=d("bulk-ux-scenario"),Rt=d("export-images"),G=d("export-status"),bn=Array.from(document.querySelectorAll('input[name="export-type"]')),He=d("bulk-modal"),lr=d("bulk-modal-title"),cr=d("bulk-modal-description"),Be=d("bulk-modal-input"),ur=d("bulk-modal-cancel"),$t=d("bulk-modal-confirm"),x=Le(),Fe="Component page",ne="original",P=!1,$=!1,X=null,rt=null,fe=new Map,be=new Map,Lt=new Map,le=new Set;function En(e){let t=fe.get(e);if(t!==void 0)return t;let n=Ke();return fe.set(e,n),n}function et(e,t){be.set(e,t);let n=Lt.get(e);n!==void 0&&p(n,t.message,t.tone)}function ot(e){x=Ge(x,e);let t=x.view==="input";er.hidden=!t,tr.hidden=t,Ct.classList.toggle("is-active",t),tt.classList.toggle("is-active",!t),Ct.setAttribute("aria-selected",String(t)),tt.setAttribute("aria-selected",String(!t))}function it(){let e=xe(re.value);kn.disabled=e.length===0||P||$,re.value.trim().length===0?p(we,"No node IDs found yet.","neutral"):e.length===0?p(we,"No node IDs found. Check the input; your text has been kept.","error"):p(we,`Found ${e.length} unique node ID${e.length===1?"":"s"}. Confirm to resolve without changing the canvas.`,"success")}function dr(){let e=ne==="original"?{indicator:"\u2195",label:"original order"}:ne==="ascending"?{indicator:"\u2191",label:"ascending"}:{indicator:"\u2193",label:"descending"};ir.textContent=e.indicator,nt.setAttribute("aria-label",`Sort Name, currently ${e.label}`),nt.setAttribute("aria-sort",ne==="original"?"none":ne)}function Se(){let e=ae(x.nodes,x.checkedNodeIds),t=x.nodes.length>0;Ee.checked=e.checked,Ee.indeterminate=e.indeterminate,Ee.disabled=!t||$,or.textContent=`${e.selectedCount} of ${x.nodes.length} checked`,Rt.disabled=e.selectedCount===0||$||P,De.disabled=e.selectedCount===0||$||P,tt.disabled=!t||P,re.disabled=P||$,Sn.disabled=P||$,nt.disabled=$,nr.setAttribute("aria-busy",String($));for(let n of bn)n.disabled=P||$;it()}function Nt(e,t,n){let r=document.createElement("span"),o=document.createElement("input");return o.type="text",o.className="export-cell-input",o.value=En(e.id)[t],o.placeholder=n,o.disabled=$,o.dataset.exportNodeId=e.id,o.dataset.exportField=t,o.setAttribute("aria-label",`${t==="uxScenario"?"UX Scenario":t} for ${e.name}`),o.addEventListener("input",()=>{let i=En(e.id);fe.set(e.id,Q(Y({},i),{[t]:o.value})),o.classList.remove("is-invalid"),o.removeAttribute("aria-invalid")}),r.append(o),r}function Ie(){var r,o,i;ze.replaceChildren(),Lt.clear();let e=Fe==="UX Key page";rr.classList.toggle("is-ux",e),ar.hidden=!e,sr.hidden=!e;let t=new Map(x.nodes.map((a,s)=>[a.id,s])),n=Qt(x.nodes,ne);for(let a of n){let s=(r=t.get(a.id))!=null?r:0,c=document.createElement("div");c.className=`data-grid export-grid table-row${e?" is-ux":""}`,c.setAttribute("role","row"),c.dataset.exportNodeId=a.id;let u=document.createElement("span");u.className="sticky-check";let l=document.createElement("input");l.type="checkbox",l.checked=x.checkedNodeIds.has(a.id),l.disabled=$,l.setAttribute("aria-label",`Include ${a.name} in export`),l.addEventListener("change",()=>{let I=new Set(x.checkedNodeIds);l.checked?I.add(a.id):I.delete(a.id),x=Q(Y({},x),{checkedNodeIds:I}),Se(),p(G,`${ae(x.nodes,I).selectedCount} rows will be updated and exported.`,"neutral")}),u.append(l);let f=document.createElement("span");f.className="sticky-index",f.textContent=String(s+1);let v=document.createElement("span");v.className="sticky-name export-identity";let E=document.createElement("span");E.className="node-name",E.textContent=a.name,E.title=a.name;let k=document.createElement("span");k.className="row-item-status",k.setAttribute("role","status");let w=be.get(a.id);p(k,(o=w==null?void 0:w.message)!=null?o:"",(i=w==null?void 0:w.tone)!=null?i:"neutral"),Lt.set(a.id,k),v.append(E,k);let S=document.createElement("span");S.className="node-id",S.textContent=a.id,S.title=a.id;let R=document.createElement("span");R.className="node-type",R.textContent=a.type,R.title=a.type,c.append(u,f,v,S,R,Nt(a,"category",e?"Optional":"Required"),Nt(a,"state",e?"Optional":"Required")),e&&c.append(Nt(a,"uxScenario","Required UX scenario")),ze.append(c)}dr(),Se()}function At(){x=Xe(x),ne="original",X=null,be.clear(),le.clear(),ze.replaceChildren(),Dt(),Pe(),ot("input"),Se()}function zt(e){$=e,Rt.textContent=e?"Exporting PNG 1x\u2026":"Export PNG 1x + ZIP";for(let t of ze.querySelectorAll("input"))t.disabled=e;Se()}function fr(e,t){let n=Array.from(ze.querySelectorAll(".export-cell-input")).find(r=>r.dataset.exportNodeId===e&&r.dataset.exportField===t);n!==void 0&&(n.classList.add("is-invalid"),n.setAttribute("aria-invalid","true"),n.focus(),n.scrollIntoView({block:"nearest",inline:"nearest"}))}function pr(e){let t=wn(e),n=t.buffer.slice(t.byteOffset,t.byteOffset+t.byteLength),r=URL.createObjectURL(new Blob([n],{type:"application/zip"})),o=document.createElement("a");o.href=r,o.download=Mt(e.manifest.batchId),o.hidden=!0,document.body.append(o),o.click(),o.remove(),window.setTimeout(()=>URL.revokeObjectURL(r),0)}function hr(e){if(X===null&&(X=e.batchId),e.batchId===X){if(e.status==="exporting"){et(e.nodeId,{message:"Resolving and exporting\u2026",tone:"neutral"});return}e.warning!==void 0?(le.add(e.nodeId),et(e.nodeId,{message:`Ready \xB7 ${e.warning}`,tone:"neutral"})):et(e.nodeId,{message:"PNG ready.",tone:"success"})}}function vr(e){if(!(X!==null&&e.manifest.batchId!==X))try{pr(e),p(G,`Downloaded ${Mt(e.manifest.batchId)} with ${e.manifest.records.length} PNG${e.manifest.records.length===1?"":"s"} and one v2 manifest${le.size===0?".":`; ${le.size} name-change warning${le.size===1?"":"s"} shown in the table.`}`,"success")}catch(t){let n=t instanceof Error?` ${t.message}`:"";p(G,`ZIP creation failed.${n} No ZIP was downloaded.`,"error")}finally{X=null,zt(!1)}}function gr(e){X!==null&&e.batchId!==X||(e.nodeId!==void 0&&et(e.nodeId,{message:"Batch failed here.",tone:"error"}),p(G,e.message,"error"),X=null,zt(!1))}function Dt(){ke.hidden=!0,De.setAttribute("aria-expanded","false")}function mr(e){rt=e;let t=e==="category"?"Category":e==="state"?"State":"UX Scenario",n=ae(x.nodes,x.checkedNodeIds).selectedCount;lr.textContent=`\u6279\u91CF\u5199\u5165 ${t}`,cr.textContent=`Apply one non-empty value to ${n} checked row${n===1?"":"s"}.`,Be.value="",$t.disabled=!0,He.hidden=!1,Be.focus()}function Pe(){He.hidden=!0,rt=null}Ct.addEventListener("click",()=>ot("input"));tt.addEventListener("click",()=>ot("resolved"));re.addEventListener("input",()=>{At(),it()});kn.addEventListener("click",()=>{let e=xe(re.value);if(e.length===0){it();return}At(),P=!0,Se(),p(we,`Resolving all ${e.length} node ID${e.length===1?"":"s"} across pages\u2026`,"neutral"),se({type:"resolve-export-nodes",input:re.value})});Sn.addEventListener("click",()=>{re.value="",fe=new Map,P=!1,At(),it(),re.focus()});for(let e of bn)e.addEventListener("change",()=>{!e.checked||$||P||(Fe=e.value==="UX Key page"?"UX Key page":"Component page",be.clear(),le.clear(),Ie(),p(G,Fe==="Component page"?"Category and State are required for checked rows.":"UX Scenario is required; Category and State are optional.","neutral"))});Ee.addEventListener("change",()=>{x=Q(Y({},x),{checkedNodeIds:je(x.nodes,Ee.checked)}),Ie(),p(G,Ee.checked?`All ${x.nodes.length} rows will be updated and exported.`:"No rows are selected for update or export.","neutral")});nt.addEventListener("click",()=>{$||(ne=Yt(ne),Ie())});De.addEventListener("click",e=>{var n;e.stopPropagation();let t=ke.hidden;ke.hidden=!t,De.setAttribute("aria-expanded",String(t)),t&&((n=ke.querySelector('button[role="menuitem"]:not([hidden])'))==null||n.focus())});ke.addEventListener("click",e=>{let t=e.target.closest("[data-bulk-field]");t!==null&&(Dt(),mr(t.dataset.bulkField))});document.addEventListener("click",e=>{e.target.isConnected&&!ke.contains(e.target)&&e.target!==De&&Dt()});Be.addEventListener("input",()=>{$t.disabled=Be.value.trim().length===0});ur.addEventListener("click",Pe);He.addEventListener("click",e=>{e.target===He&&Pe()});He.addEventListener("keydown",e=>{e.key==="Escape"&&(e.preventDefault(),Pe())});$t.addEventListener("click",()=>{let e=Be.value.trim();if(rt===null||e.length===0)return;let t=rt;fe=_t(fe,x.nodes,x.checkedNodeIds,t,e);let n=ae(x.nodes,x.checkedNodeIds).selectedCount;Pe(),Ie(),p(G,`Applied ${t==="uxScenario"?"UX Scenario":t} to ${n} checked row${n===1?"":"s"}.`,"success")});Rt.addEventListener("click",()=>{if($||x.nodes.length===0)return;be.clear(),le.clear(),Ie();let e=en(Fe,x.nodes,x.checkedNodeIds,fe);if(!e.ok){if(e.reason==="no-selection"){p(G,"Check at least one row to export.","error");return}p(G,`Row ${e.originalIndex+1}: ${e.label} is required.`,"error"),fr(e.nodeId,e.field);return}X=null,zt(!0),p(G,`Preparing ${e.request.records.length} PNG 1x export${e.request.records.length===1?"":"s"} in original input order\u2026`,"neutral"),se(e.request)});window.addEventListener("message",e=>{let t=We(e.data);if(t!==null)switch(t.type){case"resolve-export-nodes-success":P=!1,x=Ze(re.value,t.nodes,!0),ne="original",be.clear(),le.clear(),Ie(),ot("resolved"),p(we,`Confirmed ${t.nodes.length} node${t.nodes.length===1?"":"s"} across any pages. The canvas was not changed.`,"success"),p(G,Fe==="Component page"?"Category and State are required for checked rows.":"UX Scenario is required; Category and State are optional.","neutral");break;case"resolve-export-nodes-error":P=!1,Se(),p(we,`Confirm failed: ${t.message}`,"error");break;case"export-item-status":hr(t);break;case"export-success":vr(t);break;case"export-error":gr(t);break}});var Ht=d("selection-tab"),Bt=d("image-export-tab"),yr=d("selection-panel"),xr=d("image-export-panel"),lt=d("read-selection"),at=d("selection-preview"),wr=d("include-names"),st=d("copy-selection"),qe=d("copy-status"),Ft=d("ids-input-tab"),Oe=d("ids-resolved-tab"),Er=d("ids-input-view"),kr=d("ids-resolved-view"),oe=d("node-id-input"),pe=d("parse-status"),Pt=d("select-nodes"),In=d("clear-input"),qt=d("parsed-selection-preview"),ct=d("parsed-selection-rows"),Ne=d("parsed-select-all"),Sr=d("checked-count"),Tn=d("previous-node"),Mn=d("next-node"),Ut=d("copy-parsed-selection"),Nn=d("apply-selection"),q=d("selection-action-status"),U=[],g=Le(),A=null,Te=null,Me=!1,ue=!1,he=!1,_=!1;function Cn(e){let t=e==="selection";yr.hidden=!t,xr.hidden=t,Ht.classList.toggle("is-active",t),Bt.classList.toggle("is-active",!t),Ht.setAttribute("aria-selected",String(t)),Bt.setAttribute("aria-selected",String(!t))}function br(e){if(at.replaceChildren(),e.length===0){let n=document.createElement("div");n.className="empty-state",n.textContent="No nodes are selected. Select one or more canvas nodes and read again.",at.append(n);return}let t=document.createElement("div");t.className="data-grid selection-grid table-header",t.setAttribute("role","row");for(let[n,r]of[["#","sticky-index"],["Name","sticky-name"],["Node ID",""],["Type",""]]){let o=document.createElement("span");o.className=r,o.setAttribute("role","columnheader"),o.textContent=n,t.append(o)}at.append(t),e.forEach((n,r)=>{let o=document.createElement("div");o.className="data-grid selection-grid table-row",o.setAttribute("role","row");let i=document.createElement("span");i.className="sticky-index",i.textContent=String(r+1);let a=document.createElement("span");a.className="sticky-name node-name",a.textContent=n.name,a.title=n.name;let s=document.createElement("span");s.className="node-id",s.textContent=n.id,s.title=n.id;let c=document.createElement("span");c.className="node-type",c.textContent=n.type,c.title=n.type,o.append(i,a,s,c),at.append(o)})}function Ir(){let e=document.querySelector('input[name="copy-format"]:checked');return(e==null?void 0:e.value)==="json"?"json":"compact"}function dt(e){g=Ge(g,e);let t=g.view==="input";Er.hidden=!t,kr.hidden=t,Ft.classList.toggle("is-active",t),Oe.classList.toggle("is-active",!t),Ft.setAttribute("aria-selected",String(t)),Oe.setAttribute("aria-selected",String(!t))}function Ve(){let e=xe(oe.value);Pt.disabled=e.length===0||ue,oe.value.trim().length===0?p(pe,"No node IDs found yet.","neutral"):e.length===0?p(pe,"No node IDs found. Check the input; your text has been kept.","error"):p(pe,`Found ${e.length} unique node ID${e.length===1?"":"s"}.`,"success")}function Ln(){return g.nodes.filter(e=>g.checkedNodeIds.has(e.id))}function Ue(){let e=ue||he||_;oe.disabled=e,In.disabled=e,Oe.disabled=g.nodes.length===0||ue}function ut(){let e=ae(g.nodes,g.checkedNodeIds),t=g.nodes.length>0,n=he||_;Ne.checked=e.checked,Ne.indeterminate=e.indeterminate,Ne.disabled=!t||_,Sr.textContent=`${e.selectedCount} of ${g.nodes.length} checked`,Ut.disabled=e.selectedCount===0||_,Nn.disabled=e.selectedCount===0||n,Tn.disabled=!t||n||A===0,Mn.disabled=!t||n||A===g.nodes.length-1,qt.setAttribute("aria-busy",String(n)),Ue()}function Tr(){var e;A!==null&&((e=ct.querySelector(`[data-node-index="${A}"]`))==null||e.scrollIntoView({block:"nearest",inline:"nearest"}))}function ce(){ct.replaceChildren(),g.nodes.forEach((e,t)=>{let n=document.createElement("div"),r=t===A;n.className=`data-grid identity-grid table-row${r?" is-focused":""}`,n.dataset.nodeIndex=String(t),n.setAttribute("role","row"),r&&n.setAttribute("aria-current","true");let o=document.createElement("span");o.className="sticky-check";let i=document.createElement("input");i.type="checkbox",i.checked=g.checkedNodeIds.has(e.id),i.disabled=_,i.setAttribute("aria-label",`Include ${e.name}`),i.addEventListener("click",l=>l.stopPropagation()),i.addEventListener("change",()=>{let l=new Set(g.checkedNodeIds);i.checked?l.add(e.id):l.delete(e.id),g=Q(Y({},g),{checkedNodeIds:l}),ut(),p(q,`${ae(g.nodes,l).selectedCount} of ${g.nodes.length} nodes checked.`,"neutral")}),o.append(i);let a=document.createElement("span");a.className="sticky-index",a.textContent=String(t+1);let s=document.createElement("span");s.className="sticky-name node-name",s.textContent=e.name,s.title=e.name;let c=document.createElement("span");c.className="node-id",c.textContent=e.id,c.title=e.id;let u=document.createElement("span");u.className="node-type",u.textContent=e.type,u.title=e.type,n.append(o,a,s,c,u),n.addEventListener("click",()=>Rn(t)),ct.append(n)}),ut(),Tr()}function Ot(){g=Xe(g),A=null,Te=null,Me=!1,he=!1,_=!1,Oe.disabled=!0,ct.replaceChildren(),p(q,"","neutral"),dt("input"),ut()}function Rn(e){if(e<0||e>=g.nodes.length||he||_)return;let t=g.nodes[e];t!==void 0&&(A=e,Te=t.id,he=!0,ce(),qt.focus({preventScroll:!0}),p(q,`Focusing ${e+1} of ${g.nodes.length}: ${t.name}\u2026`,"neutral"),se({type:"focus-node",id:t.id}))}function Vt(e){if(g.nodes.length===0)return;let t=A===null?e===1?0:g.nodes.length-1:A+e;Rn(t)}Ht.addEventListener("click",()=>Cn("selection"));Bt.addEventListener("click",()=>Cn("export"));Ft.addEventListener("click",()=>dt("input"));Oe.addEventListener("click",()=>dt("resolved"));lt.addEventListener("click",()=>{lt.disabled=!0,p(qe,"Reading current selection\u2026","neutral"),se({type:"read-selection"})});st.addEventListener("click",async()=>{if(U.length!==0){st.disabled=!0;try{await yt(gt(U,{format:Ir(),includeNames:wr.checked})),p(qe,`Success: copied ${U.length} node${U.length===1?"":"s"}.`,"success")}catch(e){let t=e instanceof Error?` ${e.message}`:"";p(qe,`Copy failed.${t}`,"error")}finally{st.disabled=U.length===0}}});oe.addEventListener("input",()=>{Ot(),Ve()});Pt.addEventListener("click",()=>{let e=xe(oe.value);if(e.length===0){Ve();return}Ot(),ue=!0,Ue(),Pt.disabled=!0,p(pe,`Validating all ${e.length} node ID${e.length===1?"":"s"}\u2026`,"neutral"),se({type:"select-nodes",input:oe.value})});In.addEventListener("click",()=>{oe.value="",ue=!1,Ot(),Ve(),oe.focus()});Ne.addEventListener("change",()=>{g=Q(Y({},g),{checkedNodeIds:je(g.nodes,Ne.checked)}),ce(),p(q,Ne.checked?`All ${g.nodes.length} nodes are checked.`:"No nodes are checked.","neutral")});Tn.addEventListener("click",()=>Vt(-1));Mn.addEventListener("click",()=>Vt(1));qt.addEventListener("keydown",e=>{e.key!=="ArrowUp"&&e.key!=="ArrowDown"||(e.preventDefault(),Vt(e.key==="ArrowUp"?-1:1))});Ut.addEventListener("click",async()=>{let e=Ln();if(e.length!==0){Ut.disabled=!0;try{await yt(gt(e,{format:"compact",includeNames:!0})),p(q,`Success: copied ${e.length} checked node${e.length===1?"":"s"}.`,"success")}catch(t){let n=t instanceof Error?` ${t.message}`:"";p(q,`Copy failed.${n}`,"error")}finally{ut()}}});Nn.addEventListener("click",()=>{let e=Ln().map(t=>t.id);e.length!==0&&(Me=!0,_=!0,ce(),p(q,`Validating and applying ${e.length} checked node${e.length===1?"":"s"}\u2026`,"neutral"),se({type:"apply-selection",ids:e}))});window.addEventListener("message",e=>{let t=We(e.data);if(t!==null)switch(t.type){case"selection-result":{lt.disabled=!1,U=t.nodes,br(U),st.disabled=U.length===0,p(qe,U.length===0?"Nothing to copy: the current selection is empty.":`Ready to copy ${U.length} node${U.length===1?"":"s"}.`,U.length===0?"neutral":"success");break}case"selection-read-error":lt.disabled=!1,p(qe,`Read failed: ${t.message}`,"error");break;case"select-success":{ue=!1,g=Ze(oe.value,t.nodes,!1),A=null,ce(),dt("input"),Ue(),p(pe,`Success: selected ${t.count} node${t.count===1?"":"s"} on \u201C${t.pageName}\u201D. Open Resolved to review.`,"success"),p(q,`All ${t.count} nodes are checked. Use \u2191 or \u2193 to inspect them.`,"neutral");break}case"select-cross-page":{ue=!1,Ue(),Ve();let n=t.pages.map(r=>`${r.pageName}: ${r.count} node${r.count===1?"":"s"}`).join("; ");p(pe,`Cannot select across pages. ${n}. Split the IDs by page and try again; nothing was selected.`,"error");break}case"select-error":ue=!1,Ue(),Ve(),p(pe,`Selection failed: ${t.message}`,"error");break;case"focus-node-success":{if(t.id!==Te)break;let n=A===null?null:g.nodes[A];Te=null,he=!1,ce(),p(q,n==null?`Focused node on \u201C${t.pageName}\u201D.`:`Viewing ${A+1} of ${g.nodes.length}: ${n.name} on \u201C${t.pageName}\u201D.`,"success");break}case"focus-node-error":if(t.id!==Te)break;Te=null,he=!1,A=null,ce(),p(q,`Could not focus node: ${t.message}`,"error");break;case"apply-selection-success":if(!Me)break;Me=!1,_=!1,A=null,ce(),p(q,`Success: applied ${t.count} node${t.count===1?"":"s"} on \u201C${t.pageName}\u201D.`,"success");break;case"apply-selection-error":if(!Me)break;Me=!1,_=!1,ce(),p(q,`Apply failed: ${t.message}`,"error");break}});})();
+
+    </script>
+  </body>
+</html>
